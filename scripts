@@ -1,0 +1,288 @@
+---
+title: "MR Mock project mtDNA-CN Markdown Chong"
+author: "Brian Alvarez"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Libraries
+
+Loads the appropriate packages for MR analysis
+
+``` {r eval=FALSE}
+library(tidyverse)
+
+library (usethis)
+
+library(devtools)
+
+library(ggman)
+
+library(TwoSampleMR)
+
+library(R.utils) #To read in Gz data? 
+#For the read_outcome_data step
+
+library(RadialMR)
+
+library(phenoscanner)
+
+library(LDlinkR)
+
+library(lhcMR)
+
+library(janitor)
+```
+
+
+## Importing and formatting step
+
+These step imports our GWAS datasets and sets them up for MR analysis
+
+
+```{r eval=FALSE}
+
+Exposure_mtDNAcn <- read_tsv("RDatasetsb/Chong2022mtdnacn_eur.chrall.CPRA_b37.tsv.gz",comment="#", guess_max=19400433)
+
+
+
+# Import Code Outcome
+OutcomeAD <- read_tsv("RDatasetsb/Kunkle2019load_stage123.chrall.CPRA_b37.tsv.gz",comment="#",guess_max=10528608)
+
+
+#To format the GWAS results for MR analysis Exposure. 
+#I renamed some of the Variables
+Format_mtDNAcn_chong <- format_data(
+  Exposure_mtDNAcn,
+  type = "exposure",
+  snps = NULL,
+  header = TRUE,
+  phenotype_col = "TRAIT",
+  snp_col = "DBSNP_ID",
+  beta_col = "BETA",
+  se_col = "SE",
+  eaf_col = "AF",
+  effect_allele_col = "REF",
+  other_allele_col = "ALT",
+  pval_col = "P",
+  units_col = "units",
+  ncase_col = "N_CASES",
+  ncontrol_col = "N_CTRLS",
+  samplesize_col = "N",
+  gene_col = "gene",
+  min_pval = 1e-200,
+  z_col = "Z",
+  info_col = "info",
+  chr_col = "CHROM",
+  pos_col = "POS",
+  log_pval = FALSE
+)
+
+
+# The filter statements makes our dataset small in 
+#reference to a pval.
+#We then use the clump_data command.
+#Extract Instrumental variables from the exposure.
+# Note that the lower R^2 is, the less linkage disequilibrium snps will
+#be included. Use clump_data. Filter will take all
+#Observations below p value of 1e-05, change to
+#8e-08
+# This filters all of the significant SNPS and leaves all non signifcanct 
+# SNPs from the analysis.
+
+mtDNAcn_Format_chong <- filter(Format_mtDNAcn_chong, pval.exposure<1e-05)
+
+```
+
+## Clumping and Harmonization
+This step involving clumping and pruning to eliminate High linkage 
+disequilibrium SNP (SNPS correlated with other SNPs) and harmonizes SNPS in the 
+exposure and the outcome GWAS datasets. 
+
+``` {r eval=FALSE}
+
+#Extract Instrumental variables from the exposure.
+# Note that the lower Clump
+#Clump R^2 is, the less linkage disequilibrium snps will
+#be included. Use clump_data instead.
+
+mtDNAcn_Clump_chong <- clump_data(mtDNAcn_Format_chong, clump_kb = 10000,
+                            clump_r2 = 0.001,
+                            clump_p1 = 1,
+                            clump_p2 = 1,
+                            pop = "EUR"
+)%>% 
+  as_tibble()
+
+
+# Filter Clumped SNPS to include only those SNPS whose P value is 
+# Below 5e-8, Colname for P value is Pval.exposure in the filtered dataset.
+
+mtDNAcn_Clump_chong <- filter(mtDNAcn_Clump_chong , pval.exposure < 5e-8)
+
+#For outcome data I believe you use this code. 
+#It places the SNPS
+#From our clumped and pruned dataset, and 
+#references the outcome
+#dataset to pull out those same SNPS.
+#Makes sure to write in quotations the columns names for
+#,"RDatasetsb/Kunkle2019load_stage123.chrall.CPRA_b37.tsv.gz"
+#Put above name in file name statement.
+#Put \t in "sep" statement.
+#Change name from Cholesadcombine to Outcome_AD_2
+
+# Added code for Phenotype name="TRAIT" 
+# phenotype_col = "TRAIT"
+# Did not work :( Must be missing something!)
+
+Outcome_AD_mtDNAcn_chong <- read_outcome_data(
+  snps = mtDNAcn_Clump_chong$DBSNP_ID,
+  filename = "RDatasetsb/Chong2022mtdnacn_eur.chrall.CPRA_b37.tsv.gz",
+  sep = "\t", 
+  snp_col = "DBSNP_ID",
+  beta_col = "BETA",
+  se_col = "SE",
+  effect_allele_col = "REF",
+  other_allele_col = "ALT",
+  eaf_col = "AF",
+  pval_col = "P",
+  units_col = "Units",
+  gene_col = "Gene",
+  samplesize_col = "N",
+  chr_col = "CHROM",
+  pos_col = "POS",
+)
+
+
+
+# and now just this.
+mtDNAcn_AD_Harm_chong <- harmonise_data(mtDNAcn_Clump_chong, Outcome_AD_mtDNAcn_chong,action=2)
+```
+
+## Duplicate SNPS
+Checks and returns a count for any duplicate SNPs that are found.
+
+``` {r}
+duplicated(mtDNAcn_AD_Harm_chong)
+
+sum(duplicated(mtDNAcn_AD_Harm_chong))
+
+janitor::get_dupes(mtDNAcn_AD_Harm_chong,SNP)
+```
+
+## Priliminary MR 
+
+We run a Intial MR analysis for at a glance analysis on the SNPS being used in
+MR analysis.
+
+``` {r}
+
+Mr_mtDNAcn_AD_chong_Prime <- mr(mtDNAcn_AD_Harm_chong)
+
+Mr_mtDNAcn_AD_chong <- generate_odds_ratios(Mr_mtDNAcn_AD_chong_Prime)
+
+view (Mr_mtDNAcn_AD_chong)
+
+
+```
+
+## Radial MR to Remove Outliers
+
+Radial MR will be ran first to Remove the presence of outliers and APOE SNPS.
+
+``` {r}
+#  Correction for Multiple testing bonferroni correction .05/nrow
+
+AD_Radial_egg_mtDNAcn_chong <-  egger_radial(mtDNAcn_AD_Harm_chong, .05/nrow(mtDNAcn_AD_Harm), 2, TRUE)
+
+
+AD_Radial_Ivw_mtDNAcn_chong <- ivw_radial(mtDNAcn_AD_Harm_chong, .05/nrow(mtDNAcn_AD_Harm_chong), 2, .0001, TRUE)
+
+#Displays a plot of SNPS and which SNPS are outliers.
+
+plotly_radial(AD_Radial_egg_mtDNAcn_chong, TRUE)
+
+plotly_radial(AD_Radial_Ivw_mtDNAcn_chong , TRUE)
+
+# To Check out details on outliers detected in radial MR
+# Tutorial, after phenoscanner (snpquery=datasetname$outliers$SNP)
+# Checks your dataset and queries the outlier variable as well as SNP
+
+Outlier_Details_mtDNAcn_chong <- phenoscanner(snpquery=AD_Radial_egg_mtDNAcn_chong$outliers$SNP)
+
+# This step allows creates a new dataset, when running a 
+# MR on this dataset, omission of outliers and APOE SNPS that may violate MR 
+# occurs
+
+mtDNAcn_AD_Harm_Outlier_chong <- mtDNAcn_AD_Harm_chong %>%
+  left_join(AD_Radial_Ivw_mtDNAcn_chong$data) %>%
+  mutate(
+    apoe_region = case_when(
+      chr.outcome == 19 & between(pos.outcome,44912079,45912079) ~ TRUE,
+      TRUE ~ FALSE
+    ),
+    gws.outcome = ifelse(pval.outcome <5e-8, TRUE, FALSE),
+    mr_keep = ifelse(mr_keep == FALSE | Outliers == "Outlier" | apoe_region == TRUE | gws.outcome == TRUE, FALSE, TRUE)
+  )
+```
+
+## MR analysis on our data tidyed data set.
+
+Our data set is now clean, but we suspect some duplicate SNPS, which will be addressed in the next section.
+
+``` {r}
+#Run MR analysis on new dataset using this code.
+
+Mr_mtDNAcn_AD_Outlier_chong <- mr(mtDNAcn_AD_Harm_Outlier_chong)
+
+Mr_mtDNAcn_AD_oratio_Outlier_chong <- generate_odds_ratios(Mr_mtDNAcn_AD_Outlier_chong)
+
+view (Mr_mtDNAcn_AD_oratio_Outlier_chong)
+
+# Heterogeneity
+Mr_H_Test_Out_mtDNAcn_outlier_chong <- mr_heterogeneity(mtDNAcn_AD_Harm_Outlier_chong)
+
+Mr_Horizontal_Test_mtDNAcn_outlier_chong <- mr_pleiotropy_test(mtDNAcn_AD_Harm_Outlier_chong)
+
+MrAD_single_mtDNAcn_outlier_chong <- mr_singlesnp(mtDNAcn_AD_Harm_Outlier_chong)
+
+MrAD_loo_mtDNAcn_outlier_chong <- mr_leaveoneout(mtDNAcn_AD_Harm_Outlier_chong)
+
+MrAD_single_plot_mtDNAcn_outlier_chong <- mr_singlesnp(mtDNAcn_AD_Harm_Outlier_chong)
+p6 <- mr_forest_plot(MrAD_single_plot_mtDNAcn_outlier_chong)
+p6[[1]]
+
+AD_direction_Outlier_mtDNAcn_chong <- directionality_test(mtDNAcn_AD_Harm_Outlier_chong)
+
+Funnelplot_Singlesnp_Outlier_mtDNAcn_chong <- mr_singlesnp(mtDNAcn_AD_Harm_Outlier_chong)
+p7 <- mr_funnel_plot(Funnelplot_Singlesnp_Outlier_mtDNAcn_chong)
+p7[[1]]
+
+#This plots all of the leave one out analysis.
+
+MrAD_loo_plot_Out_mtDNAcn_chong <- mr_leaveoneout(mtDNAcn_AD_Harm_Outlier_chong)
+p8 <- mr_leaveoneout_plot(MrAD_loo_plot_Out_mtDNAcn_chong)
+p8[[1]]
+
+
+AD_Radial_egg_mtDNAcn_out_chong <-  egger_radial(mtDNAcn_AD_Harm_Outlier_chong, .05/nrow(mtDNAcn_AD_Harm_Outlier), 2, TRUE)
+
+
+AD_Radial_ivw_mtDNAcn_out_chong <- ivw_radial(mtDNAcn_AD_Harm_Outlier_chong, .05/nrow(mtDNAcn_AD_Harm_Outlier), 2, .0001, TRUE)
+
+
+plotly_radial(AD_Radial_egg_mtDNAcn_out_chong, TRUE)
+
+plotly_radial(AD_Radial_ivw_mtDNAcn_out_chong, TRUE)
+
+# All MR analysis with outliers removed by plot
+
+Mr_AD_Plot_Out_mtDNAcn_chong <- mr(mtDNAcn_AD_Harm_Outlier_chong)
+
+p9 <- mr_scatter_plot(Mr_AD_Plot_Out_mtDNAcn, mtDNAcn_AD_Harm_Outlier_chong)
+
+```
