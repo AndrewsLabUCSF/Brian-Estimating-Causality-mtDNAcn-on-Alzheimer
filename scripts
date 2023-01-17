@@ -39,25 +39,21 @@ library(janitor)
 ```
 
 
-## Importing and formatting step
+## Importing and formatting Exposure
 
-These step imports our GWAS datasets and sets them up for MR analysis
+This step imports our GWAS Exposure data sets and formats them up for MR analysis
 
 
 ```{r eval=FALSE}
 
-Exposure_mtDNAcn <- read_tsv("RDatasetsb/Chong2022mtdnacn_eur.chrall.CPRA_b37.tsv.gz",comment="#", guess_max=19400433)
+exposure_path = "RDatasetsb/Chong2022mtdnacn_eur.chrall.CPRA_b37.tsv.gz"
 
-
-
-# Import Code Outcome
-OutcomeAD <- read_tsv("RDatasetsb/Kunkle2019load_stage123.chrall.CPRA_b37.tsv.gz",comment="#",guess_max=10528608)
+Exposure_mtDNAcn <- read_tsv(exposure_path,comment="#", guess_max=19400433)
 
 
 #To format the GWAS results for MR analysis Exposure. 
 #I renamed some of the Variables
-Format_mtDNAcn_chong <- format_data(
-  Exposure_mtDNAcn,
+Format_mtDNAcn_chong <- Exposure_mtDNAcn %>% format_data(.,
   type = "exposure",
   snps = NULL,
   header = TRUE,
@@ -80,7 +76,52 @@ Format_mtDNAcn_chong <- format_data(
   chr_col = "CHROM",
   pos_col = "POS",
   log_pval = FALSE
-)
+)  %>%
+  as_tibble()
+
+
+```
+
+## Importing and formatting Outcome
+
+This step imports our GWAS Outcome data sets and formats them up for MR analysis
+
+``` {r eval=FALSE}
+
+outcome_path = "RDatasetsb/Kunkle2019load_stage123.chrall.CPRA_b37.tsv.gz"
+
+# Import Code Outcome
+OutcomeAD <- read_tsv(outcome_path,comment="#",guess_max=10528608)
+
+outcome <- OutcomeAD %>%
+  format_data(.,
+    type = "outcome",
+    snps = NULL,
+    header = TRUE,
+    phenotype_col = "Phenotype",
+    snp_col = "DBSNP_ID",
+    beta_col = "BETA",
+    se_col = "SE",
+    eaf_col = "AF",
+    effect_allele_col = "ALT",
+    other_allele_col = "REF",
+    pval_col = "P",
+    samplesize_col = "N",
+    z_col = "Z",
+    chr_col = "CHROM",
+    pos_col = "POS",
+    log_pval = FALSE
+) %>%
+  as_tibble()
+
+
+```
+
+## Filter Exposure data
+This allows for more time efficient clumping.
+
+``` {r eval=FALSE}
+
 
 
 # The filter statements makes our dataset small in 
@@ -91,7 +132,7 @@ Format_mtDNAcn_chong <- format_data(
 #be included. Use clump_data. Filter will take all
 #Observations below p value of 1e-05, change to
 #8e-08
-# This filters all of the significant SNPS and leaves all non signifcanct 
+# This filters all of the significant SNPS and leaves all non significant 
 # SNPs from the analysis.
 
 mtDNAcn_Format_chong <- filter(Format_mtDNAcn_chong, pval.exposure<1e-05)
@@ -109,6 +150,7 @@ exposure and the outcome GWAS datasets.
 # Note that the lower Clump
 #Clump R^2 is, the less linkage disequilibrium snps will
 #be included. Use clump_data instead.
+# Filter allows for more time efficient clumping
 
 mtDNAcn_Clump_chong <- clump_data(mtDNAcn_Format_chong, clump_kb = 10000,
                             clump_r2 = 0.001,
@@ -117,6 +159,19 @@ mtDNAcn_Clump_chong <- clump_data(mtDNAcn_Format_chong, clump_kb = 10000,
                             pop = "EUR"
 )%>% 
   as_tibble()
+
+# The filter statements makes our dataset small in 
+#reference to a pval.
+#We then use the clump_data command.
+#Extract Instrumental variables from the exposure.
+# Note that the lower R^2 is, the less linkage disequilibrium snps will
+#be included. Use clump_data. Filter will take all
+#Observations below p value of 1e-05, change to
+#8e-08
+# This filters all of the significant SNPS and leaves all non significant 
+# SNPs from the analysis.
+
+
 
 
 # Filter Clumped SNPS to include only those SNPS whose P value is 
