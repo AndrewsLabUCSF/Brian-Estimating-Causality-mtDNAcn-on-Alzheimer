@@ -7,6 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+setwd("~/")
 ```
 
 ## Libraries
@@ -46,7 +47,7 @@ This step imports our GWAS Exposure data sets and formats them up for MR analysi
 
 ```{r eval=FALSE}
 
-exposure_path = "RDatasetsb/Chong2022mtdnacn_eur.chrall.CPRA_b37.tsv.gz"
+exposure_path = "Resources/Chong2022mtdnacn_eur.chrall.CPRA_b37.tsv.gz"
 
 Exposure_mtDNAcn <- read_tsv(exposure_path,comment="#", guess_max=19400433)
 
@@ -88,7 +89,7 @@ This step imports our GWAS Outcome data sets and formats them up for MR analysis
 
 ``` {r eval=FALSE}
 
-outcome_path = "RDatasetsb/Kunkle2019load_stage123.chrall.CPRA_b37.tsv.gz"
+outcome_path = "Resources/Kunkle2019load_stage123.chrall.CPRA_b37.tsv.gz"
 
 # Import Code Outcome
 OutcomeAD <- read_tsv(outcome_path,comment="#",guess_max=10528608)
@@ -282,141 +283,5 @@ outcome_dat_proxy <- bind_rows(
   outcome_clump, proxy_outcome
 ) %>% 
   arrange(chr.outcome, pos.outcome)
-
-```
-## Harmonization Step
-
-``` {r eval=FALSE}
-# and now just this. Change the two datasets names to ones created
-# doing LD proxies. Put proxy dataset in outcome slot
-mtDNAcn_AD_Harm_chong <- harmonise_data(mtDNAcn_Clump_chong, outcome_dat_proxy,action=2)
-```
-
-## Duplicate SNPS
-Checks and returns a count for any duplicate SNPs that are found.
-
-```{undefined eval=FALSE, include=FALSE}
-duplicated(mtDNAcn_AD_Harm_chong)
-
-sum(duplicated(mtDNAcn_AD_Harm_chong))
-
-janitor::get_dupes(mtDNAcn_AD_Harm_chong,SNP)
-```
-
-## Preliminary MR 
-
-We run a Intial MR analysis for at a glance analysis on the SNPS being used in
-MR analysis.
-
-```{r MR_analysis}
-
-Mr_mtDNAcn_AD_chong_Prime <- mr(mtDNAcn_AD_Harm_chong)
-
-Mr_mtDNAcn_AD_chong <- generate_odds_ratios(Mr_mtDNAcn_AD_chong_Prime)
-
-view (Mr_mtDNAcn_AD_chong)
-
-
-```
-
-## Radial MR to Remove Outliers
-
-Radial MR will be ran first to Remove the presence of outliers and APOE SNPS.
-
-``` {r}
-#  Correction for Multiple testing bonferroni correction .05/nrow
-
-AD_Radial_egg_mtDNAcn_chong <-  egger_radial(mtDNAcn_AD_Harm_chong, .05/nrow(mtDNAcn_AD_Harm_chong), 2, TRUE)
-
-
-AD_Radial_Ivw_mtDNAcn_chong <- ivw_radial(mtDNAcn_AD_Harm_chong, .05/nrow(mtDNAcn_AD_Harm_chong), 2, .0001, TRUE)
-
-AD_Radial_egg_mtDNAcn_chong
-
-#Displays a plot of SNPS and which SNPS are outliers.
-
-Chong_AD_Radial_egg <- plotly_radial(AD_Radial_egg_mtDNAcn_chong, TRUE)
-
-Chong_AD_Radial_Ivw <- plotly_radial(AD_Radial_Ivw_mtDNAcn_chong , TRUE)
-
-Chong_AD_Radial_egg
-
-# To Check out details on outliers detected in radial MR
-# Tutorial, after phenoscanner (snpquery=datasetname$outliers$SNP)
-# Checks your dataset and queries the outlier variable as well as SNP
-# Will return Error if no outliers are present.
-
-Outlier_Details_mtDNAcn_chong <- phenoscanner(snpquery=AD_Radial_egg_mtDNAcn_chong[[outliers]][[SNP]])
-
-# This step creates a new dataset combining our radial data with our harmonized
-# data, creating a dichotomous outlier and Apoe category
-# (Columns), so when conducting  MR on this dataset, omission of outliers and 
-# APOE SNPS that may violate MR is possible.
-
-mtDNAcn_AD_Harm_Outlier_chong <- mtDNAcn_AD_Harm_chong %>%
-  left_join(AD_Radial_Ivw_mtDNAcn_chong$data) %>%
-  mutate(
-    apoe_region = case_when(
-      chr.outcome == 19 & between(pos.outcome,44912079,45912079) ~ TRUE,
-      TRUE ~ FALSE
-    ),
-    gws.outcome = ifelse(pval.outcome <5e-8, TRUE, FALSE),
-    mr_keep = ifelse(mr_keep == FALSE | Outliers == "Outlier" | apoe_region == TRUE | gws.outcome == TRUE, FALSE, TRUE)
-  )
-```
-
-## MR analysis on our data tidyed data set.
-
-Our data set is now clean, but we suspect some duplicate SNPS, which will be addressed in the next section.
-
-``` {r}
-#Run MR analysis on new dataset using this code.
-
-Mr_mtDNAcn_AD_Outlier_chong <- mr(mtDNAcn_AD_Harm_Outlier_chong)
-
-Mr_mtDNAcn_AD_oratio_Outlier_chong <- generate_odds_ratios(Mr_mtDNAcn_AD_Outlier_chong)
-
-view (Mr_mtDNAcn_AD_oratio_Outlier_chong)
-
-# Heterogeneity
-Mr_H_Test_Out_mtDNAcn_outlier_chong <- mr_heterogeneity(mtDNAcn_AD_Harm_Outlier_chong)
-
-View(Mr_H_Test_Out_mtDNAcn_outlier_chong)
-
-
-Mr_Horizontal_Test_mtDNAcn_outlier_chong <- mr_pleiotropy_test(mtDNAcn_AD_Harm_Outlier_chong)
-
-View(Mr_Horizontal_Test_mtDNAcn_outlier_chong)
-
-
-MrAD_single_mtDNAcn_outlier_chong <- mr_singlesnp(mtDNAcn_AD_Harm_Outlier_chong)
-
-MrAD_loo_mtDNAcn_outlier_chong <- mr_leaveoneout(mtDNAcn_AD_Harm_Outlier_chong)
-
-MrAD_single_plot_mtDNAcn_outlier_chong <- mr_singlesnp(mtDNAcn_AD_Harm_Outlier_chong)
-p6 <- mr_forest_plot(MrAD_single_plot_mtDNAcn_outlier_chong)
-p6[[1]]
-
-AD_direction_Outlier_mtDNAcn_chong <- directionality_test(mtDNAcn_AD_Harm_Outlier_chong)
-
-View(AD_direction_Outlier_mtDNAcn_chong)
-
-Funnelplot_Singlesnp_Outlier_mtDNAcn_chong <- mr_singlesnp(mtDNAcn_AD_Harm_Outlier_chong)
-p7 <- mr_funnel_plot(Funnelplot_Singlesnp_Outlier_mtDNAcn_chong)
-p7[[1]]
-
-#This plots all of the leave one out analysis.
-
-MrAD_loo_plot_Out_mtDNAcn_chong <- mr_leaveoneout(mtDNAcn_AD_Harm_Outlier_chong)
-p8 <- mr_leaveoneout_plot(MrAD_loo_plot_Out_mtDNAcn_chong)
-p8[[1]]
-
-
-
-# All MR analysis with outliers removed by plot
-
-Mr_AD_Plot_Out_mtDNAcn_chong <- mr(mtDNAcn_AD_Harm_Outlier_chong)
-
-p9 <- mr_scatter_plot(Mr_AD_Plot_Out_mtDNAcn_chong, mtDNAcn_AD_Harm_Outlier_chong)
 
 ```
