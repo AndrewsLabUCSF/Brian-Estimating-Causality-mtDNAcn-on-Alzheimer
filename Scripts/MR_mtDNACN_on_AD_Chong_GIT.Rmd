@@ -1,0 +1,122 @@
+---
+title: "MR Mock project mtDNA-CN Markdown Chong"
+author: "Brian Alvarez"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+knitr::opts_knit$set(root.dir = 'C:/Users/brian/OneDrive/Documents/GitHub/Brian-Mock-MR-Project-Chong')
+```
+
+
+## Libraries
+
+Loads the appropriate packages for MR analysis
+
+``` {r eval=FALSE}
+library(tidyverse)
+
+library (usethis)
+
+library(devtools)
+
+library(ggman)
+
+library(TwoSampleMR)
+
+library(R.utils) #To read in Gz data? 
+#For the read_outcome_data step
+
+library(RadialMR)
+
+library(phenoscanner)
+
+library(LDlinkR)
+
+library(lhcMR)
+
+library(janitor)
+```
+
+
+## Importing and formatting Exposure
+
+This step imports our GWAS Exposure data sets and formats them up for MR analysis
+
+
+```{r eval=FALSE}
+
+exposure_path = "Resources/Chong2022mtdnacn_eur.chrall.CPRA_b37.tsv.gz"
+
+Exposure_mtDNAcn <- read_tsv(exposure_path,comment="#", guess_max=19400433)
+
+
+#To format the GWAS results for MR analysis Exposure. 
+#I renamed some of the Variables
+Format_mtDNAcn_chong <- Exposure_mtDNAcn %>% format_data(.,
+  type = "exposure",
+  snps = NULL,
+  header = TRUE,
+  phenotype_col = "TRAIT",
+  snp_col = "DBSNP_ID",
+  beta_col = "BETA",
+  se_col = "SE",
+  eaf_col = "AF",
+  effect_allele_col = "REF",
+  other_allele_col = "ALT",
+  pval_col = "P",
+  units_col = "units",
+  ncase_col = "N_CASES",
+  ncontrol_col = "N_CTRLS",
+  samplesize_col = "N",
+  gene_col = "gene",
+  min_pval = 1e-200,
+  z_col = "Z",
+  info_col = "info",
+  chr_col = "CHROM",
+  pos_col = "POS",
+  log_pval = FALSE
+)  %>%
+  as_tibble()
+
+
+```
+
+## Importing and formatting Outcome
+
+This step imports our GWAS Outcome data sets and formats them up for MR analysis
+
+``` {r eval=FALSE}
+
+outcome_path = "Resources/Kunkle2019load_stage123.chrall.CPRA_b37.tsv.gz"
+
+# Import Code Outcome
+OutcomeAD <- read_tsv(outcome_path,comment="#",guess_max=10528608)
+
+outcome_AD_Format_Chong <- OutcomeAD %>%
+  format_data(.,
+    type = "outcome",
+    snps = NULL,
+    header = TRUE,
+    phenotype_col = "Phenotype",
+    snp_col = "DBSNP_ID",
+    beta_col = "BETA",
+    se_col = "SE",
+    eaf_col = "AF",
+    effect_allele_col = "ALT",
+    other_allele_col = "REF",
+    pval_col = "P",
+    samplesize_col = "N",
+    z_col = "Z",
+    chr_col = "CHROM",
+    pos_col = "POS",
+    log_pval = FALSE
+) %>%
+  as_tibble()
+
+# Above dataset to be used in LD Proxy step
+
+```
