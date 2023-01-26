@@ -93,7 +93,7 @@ outcome_path = "RDatasetsb/Kunkle2019load_stage123.chrall.CPRA_b37.tsv.gz"
 # Import Code Outcome
 OutcomeAD <- read_tsv(outcome_path,comment="#",guess_max=10528608)
 
-outcome <- OutcomeAD %>%
+outcome_AD_Format_Chong <- OutcomeAD %>%
   format_data(.,
     type = "outcome",
     snps = NULL,
@@ -114,6 +114,7 @@ outcome <- OutcomeAD %>%
 ) %>%
   as_tibble()
 
+# Above dataset to be used in LD Proxy step
 
 ```
 
@@ -192,36 +193,109 @@ mtDNAcn_Clump_chong <- filter(mtDNAcn_Clump_chong , pval.exposure < 5e-8)
 
 # Added code for Phenotype name="TRAIT" 
 # phenotype_col = "TRAIT"
-# Did not work :( Must be missing something!)
+# Did not work :( Must be missing something!
 
-Outcome_AD_mtDNAcn_chong <- read_outcome_data(
-  snps = mtDNAcn_Clump_chong$DBSNP_ID,
-  filename = "RDatasetsb/Chong2022mtdnacn_eur.chrall.CPRA_b37.tsv.gz",
-  sep = "\t", 
-  snp_col = "DBSNP_ID",
-  beta_col = "BETA",
-  se_col = "SE",
-  effect_allele_col = "REF",
-  other_allele_col = "ALT",
-  eaf_col = "AF",
-  pval_col = "P",
-  units_col = "Units",
-  gene_col = "Gene",
-  samplesize_col = "N",
-  chr_col = "CHROM",
-  pos_col = "POS",
+# Data set to be used in LD Proxy step
+mtDNAcn_Clump_chong_data <- mtDNAcn_Clump_chong 
+```
+
+## LD Proxies
+This attempts to retain any missing SNP's that are not both present in the 
+exposure and outcome dataset by utilizing LD proxies in their place.
+
+``` {r eval=FALSE}
+
+# extract exposure SNPs present in outcome
+outcome_clump <- semi_join(
+  outcome_AD_Format_Chong, mtDNAcn_Clump_chong_data, by = "SNP"
+)
+
+# Exposure SNPs not present in outcome
+exp_snps_wo <- anti_join(
+  mtDNAcn_Clump_chong_data, outcome_AD_Format_Chong, by = "SNP"
 )
 
 
+# Use LDLinkR to identify proxy snps based on SNP dataset above
+# that presents SNPs with no corresponding match in the other.
+LDproxy_batch(exp_snps_wo$SNP, 
+        pop = "CEU", 
+        r2d = "r2", 
+        token = 'a6deee62cc4a', 
+        append = TRUE,
+        genome_build = "grch37")
+system("mv combined_query_snp_list_grch37.txt exposure_outcome_proxy_snps.txt")
 
-# and now just this.
-mtDNAcn_AD_Harm_chong <- harmonise_data(mtDNAcn_Clump_chong, Outcome_AD_mtDNAcn_chong,action=2)
+
+# Munge proxy snp file
+proxy_snps <- read_tsv("exposure_outcome_proxy_snps.txt", skip = 1, col_names = F) %>%
+  rename(id = X1, func = X2, proxy_snp = X3, coord = X4, alleles = X5, maf = X6, 
+         distance = X7, dprime = X8, rsq = X9, correlated_alleles = X10, FORGEdb = X11, RegulomeDB = X12) %>%
+  separate(coord, c('chr', 'pos'), sep = ":") %>%
+  mutate(snp = ifelse(id == 1, proxy_snp, NA), 
+         chr = str_replace(chr, 'chr', ""), 
+         chr = as.numeric(chr), 
+         pos = as.numeric(pos)) %>%
+  fill(snp, .direction = 'down') %>%
+  relocate(snp, .before = proxy_snp) %>%
+  dplyr::select(-id, -func, -FORGEdb, -RegulomeDB) %>%
+  filter(rsq >= 0.8)
+
+# Munge proxy snp and outcome data (Changed Outcome, to outcome_AD_Format_Chong)
+proxy_outcome <- left_join(
+  proxy_snps, outcome_AD_Format_Chong, by = c("proxy_snp" = "SNP")
+) %>%
+  separate(correlated_alleles, c("target_a1.outcome", "proxy_a1.outcome", 
+                                 "target_a2.outcome", "proxy_a2.outcome"), sep = ",|=") %>%
+  filter(!is.na(chr.outcome)) %>%
+  arrange(snp, -rsq, abs(distance)) %>%
+  group_by(snp) %>%
+  slice(1) %>%
+  ungroup() %>%
+  mutate(
+     proxy.outcome = TRUE,
+     target_snp.outcome = snp,
+     proxy_snp.outcome = proxy_snp, 
+  ) %>% 
+  mutate(
+       new_effect_allele.outcome = case_when(
+        proxy_a1.outcome == effect_allele.outcome & proxy_a2.outcome == other_allele.outcome ~ target_a1.outcome,
+        proxy_a2.outcome == effect_allele.outcome & proxy_a1.outcome == other_allele.outcome ~ target_a2.outcome,
+        TRUE ~ NA_character_
+     ), 
+      new_other_allele.outcome = case_when(
+        proxy_a1.outcome == effect_allele.outcome & proxy_a2.outcome == other_allele.outcome ~ target_a2.outcome,
+        proxy_a2.outcome == effect_allele.outcome & proxy_a1.outcome == other_allele.outcome ~ target_a1.outcome,
+        TRUE ~ NA_character_
+     ), 
+     effect_allele.outcome = new_effect_allele.outcome, 
+     other_allele.outcome = new_other_allele.outcome
+  ) %>%
+  dplyr::select(-proxy_snp, -chr, -pos, -alleles, -maf, -distance, -rsq, -dprime,  
+         -new_effect_allele.outcome, -new_other_allele.outcome) %>%
+  relocate(target_a1.outcome, proxy_a1.outcome, target_a2.outcome, proxy_a2.outcome, .after = proxy_snp.outcome) %>%
+  rename(SNP = snp) %>%
+  relocate(SNP, .after = samplesize.outcome)
+
+# Merge outcome and proxy outcomes
+outcome_dat_proxy <- bind_rows(
+  outcome_clump, proxy_outcome
+) %>% 
+  arrange(chr.outcome, pos.outcome)
+
+```
+## Harmonization Step
+
+``` {r eval=FALSE}
+# and now just this. Change the two datasets names to ones created
+# doing LD proxies. Put proxy dataset in outcome slot
+mtDNAcn_AD_Harm_chong <- harmonise_data(mtDNAcn_Clump_chong, outcome_dat_proxy,action=2)
 ```
 
 ## Duplicate SNPS
 Checks and returns a count for any duplicate SNPs that are found.
 
-``` {r}
+```{undefined eval=FALSE, include=FALSE}
 duplicated(mtDNAcn_AD_Harm_chong)
 
 sum(duplicated(mtDNAcn_AD_Harm_chong))
@@ -229,12 +303,12 @@ sum(duplicated(mtDNAcn_AD_Harm_chong))
 janitor::get_dupes(mtDNAcn_AD_Harm_chong,SNP)
 ```
 
-## Priliminary MR 
+## Preliminary MR 
 
 We run a Intial MR analysis for at a glance analysis on the SNPS being used in
 MR analysis.
 
-``` {r}
+```{r MR_analysis}
 
 Mr_mtDNAcn_AD_chong_Prime <- mr(mtDNAcn_AD_Harm_chong)
 
@@ -252,26 +326,32 @@ Radial MR will be ran first to Remove the presence of outliers and APOE SNPS.
 ``` {r}
 #  Correction for Multiple testing bonferroni correction .05/nrow
 
-AD_Radial_egg_mtDNAcn_chong <-  egger_radial(mtDNAcn_AD_Harm_chong, .05/nrow(mtDNAcn_AD_Harm), 2, TRUE)
+AD_Radial_egg_mtDNAcn_chong <-  egger_radial(mtDNAcn_AD_Harm_chong, .05/nrow(mtDNAcn_AD_Harm_chong), 2, TRUE)
 
 
 AD_Radial_Ivw_mtDNAcn_chong <- ivw_radial(mtDNAcn_AD_Harm_chong, .05/nrow(mtDNAcn_AD_Harm_chong), 2, .0001, TRUE)
 
+AD_Radial_egg_mtDNAcn_chong
+
 #Displays a plot of SNPS and which SNPS are outliers.
 
-plotly_radial(AD_Radial_egg_mtDNAcn_chong, TRUE)
+Chong_AD_Radial_egg <- plotly_radial(AD_Radial_egg_mtDNAcn_chong, TRUE)
 
-plotly_radial(AD_Radial_Ivw_mtDNAcn_chong , TRUE)
+Chong_AD_Radial_Ivw <- plotly_radial(AD_Radial_Ivw_mtDNAcn_chong , TRUE)
+
+Chong_AD_Radial_egg
 
 # To Check out details on outliers detected in radial MR
 # Tutorial, after phenoscanner (snpquery=datasetname$outliers$SNP)
 # Checks your dataset and queries the outlier variable as well as SNP
+# Will return Error if no outliers are present.
 
-Outlier_Details_mtDNAcn_chong <- phenoscanner(snpquery=AD_Radial_egg_mtDNAcn_chong$outliers$SNP)
+Outlier_Details_mtDNAcn_chong <- phenoscanner(snpquery=AD_Radial_egg_mtDNAcn_chong[[outliers]][[SNP]])
 
-# This step allows creates a new dataset, when running a 
-# MR on this dataset, omission of outliers and APOE SNPS that may violate MR 
-# occurs
+# This step creates a new dataset combining our radial data with our harmonized
+# data, creating a dichotomous outlier and Apoe category
+# (Columns), so when conducting  MR on this dataset, omission of outliers and 
+# APOE SNPS that may violate MR is possible.
 
 mtDNAcn_AD_Harm_Outlier_chong <- mtDNAcn_AD_Harm_chong %>%
   left_join(AD_Radial_Ivw_mtDNAcn_chong$data) %>%
@@ -301,7 +381,13 @@ view (Mr_mtDNAcn_AD_oratio_Outlier_chong)
 # Heterogeneity
 Mr_H_Test_Out_mtDNAcn_outlier_chong <- mr_heterogeneity(mtDNAcn_AD_Harm_Outlier_chong)
 
+View(Mr_H_Test_Out_mtDNAcn_outlier_chong)
+
+
 Mr_Horizontal_Test_mtDNAcn_outlier_chong <- mr_pleiotropy_test(mtDNAcn_AD_Harm_Outlier_chong)
+
+View(Mr_Horizontal_Test_mtDNAcn_outlier_chong)
+
 
 MrAD_single_mtDNAcn_outlier_chong <- mr_singlesnp(mtDNAcn_AD_Harm_Outlier_chong)
 
@@ -312,6 +398,8 @@ p6 <- mr_forest_plot(MrAD_single_plot_mtDNAcn_outlier_chong)
 p6[[1]]
 
 AD_direction_Outlier_mtDNAcn_chong <- directionality_test(mtDNAcn_AD_Harm_Outlier_chong)
+
+View(AD_direction_Outlier_mtDNAcn_chong)
 
 Funnelplot_Singlesnp_Outlier_mtDNAcn_chong <- mr_singlesnp(mtDNAcn_AD_Harm_Outlier_chong)
 p7 <- mr_funnel_plot(Funnelplot_Singlesnp_Outlier_mtDNAcn_chong)
@@ -324,20 +412,11 @@ p8 <- mr_leaveoneout_plot(MrAD_loo_plot_Out_mtDNAcn_chong)
 p8[[1]]
 
 
-AD_Radial_egg_mtDNAcn_out_chong <-  egger_radial(mtDNAcn_AD_Harm_Outlier_chong, .05/nrow(mtDNAcn_AD_Harm_Outlier), 2, TRUE)
-
-
-AD_Radial_ivw_mtDNAcn_out_chong <- ivw_radial(mtDNAcn_AD_Harm_Outlier_chong, .05/nrow(mtDNAcn_AD_Harm_Outlier), 2, .0001, TRUE)
-
-
-plotly_radial(AD_Radial_egg_mtDNAcn_out_chong, TRUE)
-
-plotly_radial(AD_Radial_ivw_mtDNAcn_out_chong, TRUE)
 
 # All MR analysis with outliers removed by plot
 
 Mr_AD_Plot_Out_mtDNAcn_chong <- mr(mtDNAcn_AD_Harm_Outlier_chong)
 
-p9 <- mr_scatter_plot(Mr_AD_Plot_Out_mtDNAcn, mtDNAcn_AD_Harm_Outlier_chong)
+p9 <- mr_scatter_plot(Mr_AD_Plot_Out_mtDNAcn_chong, mtDNAcn_AD_Harm_Outlier_chong)
 
 ```
