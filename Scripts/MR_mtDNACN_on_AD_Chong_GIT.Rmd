@@ -346,11 +346,12 @@ MR analysis. Potential outliers not removed from this analysis
 
 ```{r MR_analysis}
 
-Mr_mtDNAcn_AD_chong_Prime <- mr(mtDNAcn_AD_Harm_chong)
+Mr_mtDNAcn_AD_chong_Prime <- mr(mtDNAcn_AD_Harm_chong, method_list = c("mr_ivw_fe", "mr_egger_regression", "mr_weighted_median", "mr_weighted_mode"))
 
 Mr_mtDNAcn_AD_chong_Prime_OR <- generate_odds_ratios(Mr_mtDNAcn_AD_chong_Prime)
 
 view (Mr_mtDNAcn_AD_chong_Prime_OR )
+
 
 
 ```
@@ -391,20 +392,38 @@ MrAD_loo_plot_Prime_mtDNAcn_chong <- mr_leaveoneout(mtDNAcn_AD_Harm_chong)
 p3_Prime_loo <- mr_leaveoneout_plot(MrAD_loo_plot_Prime_mtDNAcn_chong)
 p3_Prime_loo[[1]]
 
+# To plot preliminary MR analysis, must rerun and rename.
+
+Mr_ADCholes_Plot_mtDNAcn_chong <- mr(mtDNAcn_AD_Harm_chong)
+
+p4_Prime_scatter_chong <- mr_scatter_plot(Mr_ADCholes_Plot_mtDNAcn_chong, mtDNAcn_AD_Harm_chong)
+
+p4_scatter_out_prime <- p4_Prime_scatter_chong[[1]] + theme_bw() + 
+  guides(color=guide_legend(ncol =1)) + 
+  theme(
+    text = element_text(size = 8), 
+  )
+p4_scatter_out_prime
+
 ```
 ## Export preliminary MR Results
 
 ```{r preliminary_results}
+# MR Analysis
+write_csv(Mr_mtDNAcn_AD_chong_Prime_OR , 'results/MR_Results_Chong/MR_Prime_Chong.csv')
+
 # Sensitivity Tests
-write_csv(Mr_H_Test_Out_mtDNAcn_Prime_chong , 'results/Sensitivity_Tests/mr_het_res_Chong_Prime.csv')
-write_csv(Mr_Horizontal_Test_mtDNAcn_Prime_chong , 'results/Sensitivity_Tests/mr_plt_res_Chong_Prime.csv')
-write_csv(AD_direction_Prime_mtDNAcn_chong , 'results/Sensitivity_Tests/Directional_Chong_Prime.csv')
+write_csv(Mr_mtDNAcn_AD_chong_Prime_OR , 'results/MR_Results_Chong/MR_Prime_Chong.csv')
+write_csv(Mr_H_Test_Out_mtDNAcn_Prime_chong , 'results/Sensitivity_Tests_Chong/mr_het_res_Chong_Prime.csv')
+write_csv(Mr_Horizontal_Test_mtDNAcn_Prime_chong , 'results/Sensitivity_Tests_Chong/mr_plt_res_Chong_Prime.csv')
+write_csv(AD_direction_Prime_mtDNAcn_chong , 'results/Sensitivity_Tests_Chong/Directional_Chong_Prime.csv')
 
-# Plots, Add radial Plots as well?
+# Plots
 
-ggsave('results/Plots/mr_scatter_Chong_Prime.png', plot = p1_Prime_Single [[1]], units = 'in', height = 4, width = 9)
-ggsave('results/plots/mr_funnel_Single_Chong_Prime.png', plot = P2_Prime_Funnel_single[[1]], units = 'in', height = 4, width = 9)
-ggsave('results/plots/mr_forrest_loo_Chong_Prime.png', plot =p3_Prime_loo[[1]] + theme(text = element_text(size = 8)), units = 'in', height = 9, width = 9)
+ggsave('results/Plots_Chong/mr_single_Forest_Chong_Prime.png', plot = p1_Prime_Single [[1]], units = 'in', height = 4, width = 9)
+ggsave('results/Plots_Chong/mr_funnel_Single_Chong_Prime.png', plot = P2_Prime_Funnel_single[[1]], units = 'in', height = 4, width = 9)
+ggsave('results/Plots_Chong/mr_forest_loo_Chong_Prime.png', plot =p3_Prime_loo[[1]] + theme(text = element_text(size = 8)), units = 'in', height = 9, width = 9)
+ggsave('results/Plots_Chong/mr_scatter_Chong_Prime.png', plot = p4_scatter_out_prime, units = 'in', height = 4, width = 9)
 ```
 ## Radial MR to Remove Outliers
 
@@ -420,7 +439,7 @@ AD_Radial_Ivw_mtDNAcn_chong <- ivw_radial(mtDNAcn_AD_Harm_chong, .05/nrow(mtDNAc
 
 AD_Radial_egg_mtDNAcn_chong
 
-#Displays a plot of SNPS and which SNPS are outliers.
+#Displays a Interactive radial plot of SNPS and which SNPS are outliers.
 
 Chong_AD_Radial_egg <- plotly_radial(AD_Radial_egg_mtDNAcn_chong, TRUE)
 
@@ -428,13 +447,35 @@ Chong_AD_Radial_Ivw <- plotly_radial(AD_Radial_Ivw_mtDNAcn_chong , TRUE)
 
 Chong_AD_Radial_egg
 
-# To Check out details on outliers detected in radial MR
+# Static plot results of Radial MR
+
+radial_p_Chong_IVW <- plot_radial(AD_Radial_Ivw_mtDNAcn_chong, radial_scale = F, show_outliers = T)
+
+radial_p_Chong_IVW
+
+```
+## Export Radial Plots
+
+``` {r radial_outliers_export}
+
+ggsave('results/Plots_Chong/mr_radial_IVW.png', plot = radial_p_Chong_IVW, units = 'in', height = 4, width = 9)
+
+```
+
+## Outlier details
+``` {r}
+
+# To receive details on outliers detected in radial MR
 # Tutorial, after phenoscanner (snpquery=datasetname$outliers$SNP)
 # Checks your dataset and queries the outlier variable as well as SNP
 # Will return Error if no outliers are present.
 
 Outlier_Details_mtDNAcn_chong <- phenoscanner(snpquery=AD_Radial_egg_mtDNAcn_chong[[outliers]][[SNP]])
 
+```
+
+## Combining Radial data and harmonized
+``` {r}
 # This step creates a new dataset combining our radial data with our harmonized
 # data, creating a dichotomous outlier and Apoe category
 # (Columns), so when conducting  MR on this dataset, omission of outliers and 
@@ -454,71 +495,106 @@ mtDNAcn_AD_Harm_Outlier_chong <- mtDNAcn_AD_Harm_chong %>%
 
 ## MR analysis on our data tidyed data set.
 
-Our data set is now clean, but we suspect some duplicate SNPS, which will be addressed in the next section.
+Our data set is now clean, now we rerun Mr analysis with these outliers removed and LD Proxies added in.
 
 ``` {r}
-#Run MR analysis on new dataset using this code.
+#Run MR analysis on new data-set using this code.
 
-Mr_mtDNAcn_AD_Outlier_chong <- mr(mtDNAcn_AD_Harm_Outlier_chong)
+Mr_mtDNAcn_AD_Outlier_chong <- mr(mtDNAcn_AD_Harm_Outlier_chong, method_list = c("mr_ivw_fe", "mr_egger_regression", "mr_weighted_median", "mr_weighted_mode"))
 
 Mr_mtDNAcn_AD_oratio_Outlier_chong <- generate_odds_ratios(Mr_mtDNAcn_AD_Outlier_chong)
 
 view (Mr_mtDNAcn_AD_oratio_Outlier_chong)
 
-# Heterogeneity
+```
+
+## Perform Outlier Removed Sensentivity analysis
+
+``` {r sensitivity}
+# Heterogeneity (Test for Overall Violations of MR assumptions)
 Mr_H_Test_Out_mtDNAcn_outlier_chong <- mr_heterogeneity(mtDNAcn_AD_Harm_Outlier_chong)
 
 View(Mr_H_Test_Out_mtDNAcn_outlier_chong)
 
-
+# (Test for Violations of MR assumptions via Horizontal pleiotrophy)
 Mr_Horizontal_Test_mtDNAcn_outlier_chong <- mr_pleiotropy_test(mtDNAcn_AD_Harm_Outlier_chong)
 
 View(Mr_Horizontal_Test_mtDNAcn_outlier_chong)
 
-
-MrAD_single_mtDNAcn_outlier_chong <- mr_singlesnp(mtDNAcn_AD_Harm_Outlier_chong)
-
-MrAD_loo_mtDNAcn_outlier_chong <- mr_leaveoneout(mtDNAcn_AD_Harm_Outlier_chong)
-
-MrAD_single_plot_mtDNAcn_outlier_chong <- mr_singlesnp(mtDNAcn_AD_Harm_Outlier_chong)
-p6 <- mr_forest_plot(MrAD_single_plot_mtDNAcn_outlier_chong)
-p6[[1]]
+# Directionality test (testing whether Exposure >Outcome direction is true casual direction)
 
 AD_direction_Outlier_mtDNAcn_chong <- directionality_test(mtDNAcn_AD_Harm_Outlier_chong)
 
 View(AD_direction_Outlier_mtDNAcn_chong)
 
+```
+
+## MR Outlier Plots
+
+``` {r}
+MrAD_single_mtDNAcn_outlier_chong <- mr_singlesnp(mtDNAcn_AD_Harm_Outlier_chong)
+
+MrAD_loo_mtDNAcn_outlier_chong <- mr_leaveoneout(mtDNAcn_AD_Harm_Outlier_chong)
+
+MrAD_single_plot_mtDNAcn_outlier_chong <- mr_singlesnp(mtDNAcn_AD_Harm_Outlier_chong)
+p5_Out_Removed_Forest_Single_Chong <- mr_forest_plot(MrAD_single_plot_mtDNAcn_outlier_chong)
+p5_Out_Removed_Forest_Single_Chong[[1]]
+
+
+
 Funnelplot_Singlesnp_Outlier_mtDNAcn_chong <- mr_singlesnp(mtDNAcn_AD_Harm_Outlier_chong)
-p7 <- mr_funnel_plot(Funnelplot_Singlesnp_Outlier_mtDNAcn_chong)
-p7[[1]]
+p6_Out_Removed_Funnel_Single_Chong <- mr_funnel_plot(Funnelplot_Singlesnp_Outlier_mtDNAcn_chong)
+p6_Out_Removed_Funnel_Single_Chong[[1]]
 
 #This plots all of the leave one out analysis.
 
 MrAD_loo_plot_Out_mtDNAcn_chong <- mr_leaveoneout(mtDNAcn_AD_Harm_Outlier_chong)
-p8 <- mr_leaveoneout_plot(MrAD_loo_plot_Out_mtDNAcn_chong)
-p8[[1]]
+p7_Out_Removed_Forest_loo_Chong <- mr_leaveoneout_plot(MrAD_loo_plot_Out_mtDNAcn_chong)
+p7_Out_Removed_Forest_loo_Chong[[1]]
 
 
 
 # All MR analysis with outliers removed by plot
+# To plot preliminary MR analysis, must rerun and rename.
 
 Mr_AD_Plot_Out_mtDNAcn_chong <- mr(mtDNAcn_AD_Harm_Outlier_chong)
 
-p9 <- mr_scatter_plot(Mr_AD_Plot_Out_mtDNAcn_chong, mtDNAcn_AD_Harm_Outlier_chong)
+p8_Out_Removed_Scatter_Chong <- mr_scatter_plot(Mr_AD_Plot_Out_mtDNAcn_chong, mtDNAcn_AD_Harm_Outlier_chong)
+
+
+p8_scatter_out_Chong <- p8_Out_Removed_Scatter_Chong[[1]] + theme_bw() + 
+  guides(color=guide_legend(ncol =1)) + 
+  theme(
+    text = element_text(size = 8), 
+  )
+p8_scatter_out_Chong
+
 
 ```
 
 ## Export Code to Save Results 
 ```{r export_results_outliers}
-write_csv(mr_res_outlier, 'results/mr_results_outliers.csv')
+# MR Analysis
+write_csv(Mr_mtDNAcn_AD_Outlier_chong , 'results/MR_Results_Chong/MR_Out_Chong.csv')
+
+# Sensitivity Tests
+
+write_csv(Mr_H_Test_Out_mtDNAcn_outlier_chong, 'results/Sensitivity_Tests_Chong/mr_het_res_Chong_Out.csv')
+write_csv(Mr_Horizontal_Test_mtDNAcn_outlier_chong , 'results/Sensitivity_Tests_Chong/mr_plt_res_Chong_Out.csv')
+write_csv(AD_direction_Outlier_mtDNAcn_chong , 'results/Sensitivity_Tests_Chong/Directional_Chong_Out.csv')
+
+
+# MR Outlier removed Plots
+
+ggsave('results/Plots_Chong/mr_single_Forest_Chong_Out.png', plot = p5_Out_Removed_Forest_Single_Chong [[1]], units = 'in', height = 4, width = 9)
+ggsave('results/Plots_Chong/mr_funnel_Single_Chong_Out.png', plot = p6_Out_Removed_Funnel_Single_Chong[[1]], units = 'in', height = 4, width = 9)
+ggsave('results/Plots_Chong/mr_forest_loo_Chong_Out.png', plot =p7_Out_Removed_Forest_loo_Chong[[1]] + theme(text = element_text(size = 8)), units = 'in', height = 9, width = 9)
+ggsave('results/Plots_Chong/mr_scatter_Chong_Out.png', plot = p8_scatter_out_Chong, units = 'in', height = 4, width = 9)
+
 ```
 
-```{r export_outlier_results}
-write_csv(mr_res_outlier, 'results/mr_res_outlier.csv')
-ggsave('results/plots/mr_scatter_outlier.png', plot = scatter_outlier_p[[1]], units = 'in', height = 4, width = 9)
-ggsave('results/plots/mr_loo_outlier.png', plot = loo_outlier_p[[1]], units = 'in', height = 9, width = 9)
-ggsave('results/plots/mr_funnel_outlier.png', plot = funnel_outlier_p[[1]], units = 'in', height = 4, width = 9)
-ggsave('results/plots/mr_radial_outlier.png', plot = radial_outlier_p, units = 'in', height = 4, width = 9)
+```{r export_outlier_results} 
+
 ```
 
 
