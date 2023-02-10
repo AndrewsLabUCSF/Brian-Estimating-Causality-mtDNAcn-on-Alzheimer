@@ -1,0 +1,23 @@
+"id.exposure","id.outcome","outcome","exposure","method","nsnp","b","se","pval"
+"lcfojX","D8E3zs","AD","mtDNAcn_Apoe_removed","MR Egger",57,-0.0358268361151869,0.0948545269404057,0.7071049735268
+"lcfojX","D8E3zs","AD","mtDNAcn_Apoe_removed","Weighted median",57,0.00471681356658257,0.0515101916624735,0.927039297309985
+"lcfojX","D8E3zs","AD","mtDNAcn_Apoe_removed","Inverse variance weighted",57,-0.0121193058159288,0.0369141750148695,0.742677017354651
+"lcfojX","D8E3zs","AD","mtDNAcn_Apoe_removed","Simple mode",57,-0.0208220790514566,0.110353434378255,0.85102155911256
+"lcfojX","D8E3zs","AD","mtDNAcn_Apoe_removed","Weighted mode",57,-0.00275289246595078,0.0740567809329569,0.970479482121732
+"id.exposure","id.outcome","outcome","exposure","method","Q","Q_df","Q_pval","I2"
+"lcfojX","D8E3zs","AD","mtDNAcn_Apoe_removed","MR Egger",68.7287227669083,55,0.10097693932588,19.9752333729071
+"lcfojX","D8E3zs","AD","mtDNAcn_Apoe_removed","Inverse variance weighted",68.8209927196656,56,0.116706234339285,18.6294794843928
+"id.exposure","id.outcome","outcome","exposure","egger_intercept","se","pval"
+"lcfojX","D8E3zs","AD","mtDNAcn_Apoe_removed",0.000405411428823196,0.00149194780660722,0.786844755014309
+*
+"id.exposure","id.outcome","outcome","exposure","method","nsnp","b","se","pval"
+"QdACef","eFhbGc","mtDNAcn_Apoe_removed","AD","MR Egger",21,0.037995274905119,0.0693866649846404,0.590350480520142
+"QdACef","eFhbGc","mtDNAcn_Apoe_removed","AD","Weighted median",21,0.0134473164976513,0.0175859952925009,0.444473714590086
+"QdACef","eFhbGc","mtDNAcn_Apoe_removed","AD","Inverse variance weighted",21,0.00893979183058241,0.0156045218365479,0.566714085184533
+"QdACef","eFhbGc","mtDNAcn_Apoe_removed","AD","Simple mode",21,0.0231045401439768,0.0323300913366154,0.483087252917132
+"QdACef","eFhbGc","mtDNAcn_Apoe_removed","AD","Weighted mode",21,0.0241357207675134,0.0294967579310825,0.42285686193791
+"id.exposure","id.outcome","outcome","exposure","method","Q","Q_df","Q_pval","I2"
+"QdACef","eFhbGc","mtDNAcn_Apoe_removed","AD","MR Egger",34.3595028427932,19,0.0166619789641025,44.7023430841485
+"QdACef","eFhbGc","mtDNAcn_Apoe_removed","AD","Inverse variance weighted",34.6942533609942,20,0.0217944455067653,42.3535656124382
+"id.exposure","id.outcome","outcome","exposure","egger_intercept","se","pval"
+"QdACef","eFhbGc","mtDNAcn_Apoe_removed","AD",-0.000887921507719276,0.00206376661165491,0.671859344240234

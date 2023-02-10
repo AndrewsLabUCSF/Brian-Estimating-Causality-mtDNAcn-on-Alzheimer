@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 knitr::opts_knit$set(root.dir = 'C:/Users/brian/OneDrive/Documents/GitHub/Brian-Mock-MR-Project-Chong')
 
+ 
 ```
 
 
@@ -111,11 +112,43 @@ outcome_ss_Kunkle <- read_tsv(outcome_path, comment = "##",  col_types = coltype
   rename(SNP = DBSNP_ID)
 ```
 
+## Filter APOE Region.
+Removal of the Apoe region from both the Exposure and Outcome datasets. Creates
+a new Binary variable apoe_region and filters dataset based on that column.
+
+``` {r filter}
+# For Exposure mtDNAcn
+
+chong_apoe <- mutate(exposure_ss_Chong,
+    apoe_region = case_when(
+      CHROM == 19 & between(POS,44912079,45912079) ~ TRUE,
+      TRUE ~ FALSE
+    )) %>%
+  as_tibble()
+
+
+exposure_ss_filter_apoe_Chong <- filter(chong_apoe, apoe_region=="FALSE")
+
+# For Outcome AD.
+
+kunkle_apoe <- mutate(outcome_ss_Kunkle,
+    apoe_region = case_when(
+      CHROM == 19 & between(POS,44912079,45912079) ~ TRUE,
+      TRUE ~ FALSE
+    )) %>%
+  as_tibble()
+
+
+exposure_ss_filter_apoe_Kunkle <- filter(kunkle_apoe, apoe_region=="FALSE")
+
+```
+
+
 ## Merging Exposure and outcome datasets (X and Y)
 ```{r merge}
 ## Step 1
-trait.names=c("mtDNAcn","AD")
-input.files = list(exposure_ss_Chong, outcome_ss_Kunkle)
+trait.names=c("mtDNAcn_Apoe_removed","AD")
+input.files = list(exposure_ss_filter_apoe_Chong, exposure_ss_filter_apoe_Kunkle)
 df = merge_sumstats(input.files, trait.names, LD.filepath, rho.filepath)
 ```
 
@@ -123,7 +156,7 @@ df = merge_sumstats(input.files, trait.names, LD.filepath, rho.filepath)
 ## Step 2: Calculating smart starting points for the likelihood optimisation
 
 ```{r read_merge}
-SP_list = calculate_SP(df,trait.names,run_ldsc=TRUE,run_MR=TRUE,hm3=hm3,ld=ld,nStep = 2,
+SP_list = calculate_SP(df,trait.names,run_ldsc=TRUE,run_MR=TRUE,hm3=hm3,ld="Resources/eur_w_ld_chr",nStep = 2,
                        SP_single=3,SP_pair=50,SNP_filter=10)
 ```
 
@@ -131,7 +164,12 @@ SP_list = calculate_SP(df,trait.names,run_ldsc=TRUE,run_MR=TRUE,hm3=hm3,ld=ld,nS
 
 ```{r read_merge}
 ## Step 3
-res_Chong = lhc_mr(SP_list, trait.names, paral_method="lapply", nCores = 2, nBlock=200)
-res %>% as_tibble() %>% write_csv(., "MR_Results_Chong/lhcmr_Chong.csv")
+res_Chong = lhc_mr(SP_list, trait.names, paral_method="lapply", nCores = 1, nBlock=200)
+res_Chong %>% as_tibble() %>% write_csv(., "results/MR_Results_Chong/lhcmr_Chong.csv")
+
+
+view(res_Chong)
+
+
 ```
 
