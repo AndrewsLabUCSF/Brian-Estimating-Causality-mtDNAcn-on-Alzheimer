@@ -205,7 +205,7 @@ SP_list = calculate_SP(df,trait.names,run_ldsc=TRUE,run_MR=TRUE,hm3=hm3,ld="Reso
 ```{r read_merge_LHCMR}
 ## Step 3
 res_Chong_Kunkle  = lhc_mr(SP_list, trait.names, paral_method="lapply", nCores = 1, nBlock=200)
-res_Chong_Kunkle  %>% as_tibble() %>% write_csv(., "results/LHC_MR_Results_Chong_Kunkle/lhcmr_Chong_Kunkle.csv")
+res_Chong_Kunkle  %>% as_tibble() %>% write_csv(., "results/LHC_MR_Results_Chong_Kunkle/lhcmr_Chong_Kunkle_apoe_removed.csv")
 
 
 view(res_Chong_Kunkle)
@@ -236,7 +236,7 @@ SP_list = calculate_SP(df,trait.names,run_ldsc=TRUE,run_MR=TRUE,hm3=hm3,ld="Reso
 ```{r read_merge_LHCMR}
 ## Step 3
 res_Chong_Bellenguez = lhc_mr(SP_list, trait.names, paral_method="lapply", nCores = 1, nBlock=200)
-res_Chong_Bellenguez %>% as_tibble() %>% write_csv(., "results/LHC_MR_Results_Chong_Bellenguez/lhcmr_Chong_bellenguez.csv")
+res_Chong_Bellenguez %>% as_tibble() %>% write_csv(., "results/LHC_MR_Results_Chong_Bellenguez/lhcmr_Chong_bellenguez_apoe_removed.csv")
 
 
 view(res_Chong_Bellenguez)
@@ -266,7 +266,7 @@ SP_list = calculate_SP(df,trait.names,run_ldsc=TRUE,run_MR=TRUE,hm3=hm3,ld="Reso
 ```{r read_merge_LHCMR}
 ## Step 3
 res_longchamps_Bellenguez = lhc_mr(SP_list, trait.names, paral_method="lapply", nCores = 1, nBlock=200)
-res_longchamps_Bellenguez %>% as_tibble() %>% write_csv(., "results/LHC_MR_Results_Longchamps_Bellenguez/lhcmr_Longchamps_bellenguez.csv")
+res_longchamps_Bellenguez %>% as_tibble() %>% write_csv(., "results/LHC_MR_Results_Longchamps_Bellenguez/lhcmr_Longchamps_bellenguez_apoe_omit.csv")
 
 
 view(res_longchamps_Bellenguez)
@@ -298,7 +298,7 @@ SP_list = calculate_SP(df,trait.names,run_ldsc=TRUE,run_MR=TRUE,hm3=hm3,ld="Reso
 ```{r read_merge_LHCMR}
 ## Step 3
 res_Hagg_Bellenguez = lhc_mr(SP_list, trait.names, paral_method="lapply", nCores = 1, nBlock=200)
-res_Hagg_Bellenguez %>% as_tibble() %>% write_csv(., "results/LHC_MR_Results_Hagg_Bellenguez/lhcmr_Hagg_bellenguez.csv")
+res_Hagg_Bellenguez %>% as_tibble() %>% write_csv(., "results/LHC_MR_Results_Hagg_Bellenguez/lhcmr_Hagg_bellenguez_apoe_omit.csv")
 
 
 view(res_Hagg_Bellenguez)

@@ -1,0 +1,278 @@
+---
+title: "Chong LHC MR"
+author: "Brian Alvarez"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+knitr::opts_knit$set(root.dir = 'C:/Users/brian/OneDrive/Documents/GitHub/Casual_Estimate_mtDNAcn_on_Alzheimer')
+
+ 
+```
+
+
+## Libraries
+
+Loads the appropriate packages for MR analysis
+
+``` {r eval=FALSE}
+library(tidyverse) # Data wrangling 
+
+library (usethis)
+
+library(devtools)
+
+library(ggman)
+
+library(TwoSampleMR) # MR 
+
+library(R.utils) #To read in Gz data? 
+#For the read_outcome_data step
+
+library(RadialMR) # Radial MR sensitivity analysis 
+
+library(phenoscanner)
+
+library(LDlinkR) # LD and proxy snps
+
+library(lhcMR)
+
+library(janitor)
+```
+
+
+## Importing and formatting Exposure
+
+This step imports our GWAS Exposure data sets and formats them up for MR analysis
+
+
+```{r eval=FALSE}
+# Define column types for summary statistics GWAS
+coltypes = cols(
+  ID = col_character(),
+  CHROM = col_double(),
+  POS = col_double(),
+  REF = col_character(),
+  ALT = col_character(),
+  AF = col_double(),
+  TRAIT = col_character(),
+  BETA = col_double(),
+  SE = col_double(),
+  Z = col_double(),
+  P = col_double(),
+  N = col_double(),
+  OR = col_double(),
+  OR_L95 = col_double(),
+  OR_U95 = col_double(),
+  DIR = col_character(),
+  G1000_ID = col_character(),
+  G1000_VARIANT = col_character(),
+  DBSNP_ID = col_character(),
+  DBSNP_VARIANT = col_character(),
+  OLD_ID = col_character(),
+  OLD_VARIANT = col_character()
+)
+
+
+
+```
+
+## Step 1: Importing Exposure and Outcome Data
+```{r ld}
+## File paths needed for the analysis
+LD.filepath = "Resources/LDscores_filtered.csv" # LD scores
+rho.filepath = "Resources/LD_GM2_2prm.csv" # local/SNP-specific LD scores
+ld = "Resources/eur_w_ld_chr/"
+hm3 = "Resources/w_hm3.snplist"
+```
+
+## Exposure Import
+Mitochondrial DNA count Number (X variable)
+
+```{r read_exposure_Chong}
+
+exposure_path = "Resources/Chong2022mtdnacn_eur.chrall.CPRA_b37.tsv.gz"
+exposure_ss_Chong <- read_tsv(exposure_path, comment = "##", col_types = coltypes, 
+                        col_select = c(DBSNP_ID, CHROM, POS, REF, ALT, AF, BETA, SE, Z, P, N)) %>%
+  rename(SNP = DBSNP_ID)
+
+
+
+```
+
+```{r read_exposure_Longchamps}
+
+Longchamps_path = "Resources/Longchamps2021mtdnacn.chrall.CPRA_b37.tsv.gz"
+exposure_ss_Longchamps <- read_tsv(Longchamps_path, comment = "##", col_types = coltypes, 
+                        col_select = c(DBSNP_ID, CHROM, POS, REF, ALT, AF, BETA, SE, Z, P, N)) %>%
+  rename(SNP = DBSNP_ID)
+```
+
+```{r read_exposure_Hagg}
+
+Hagg_path = "Resources/Hagg2020mtdnacn.chrall.CPRA_b37.tsv.gz"
+exposure_ss_Hagg <- read_tsv(Hagg_path, comment = "##", col_types = coltypes, 
+                        col_select = c(DBSNP_ID, CHROM, POS, REF, ALT, AF, BETA, SE, Z, P, N)) %>%
+  rename(SNP = DBSNP_ID)
+```
+
+## Outcome Import 
+Alzheimer's Disease (Y variable)
+
+```{r read_outcome_Kunkle}
+outcome_path = "Resources/Kunkle2019load_stage123.chrall.CPRA_b37.tsv.gz"
+outcome_ss_Kunkle <- read_tsv(outcome_path, comment = "##",  col_types = coltypes, 
+                        col_select = c(DBSNP_ID, CHROM, POS, REF, ALT, AF, BETA, SE, Z, P, N))  %>%
+  rename(SNP = DBSNP_ID)
+```
+
+```{r read_outcome_Bellenguez}
+
+Bellenguez_path = "Resources/Bellenguez2022load.chrall.CPRA_b37.tsv.gz"
+outcome_ss_Bellenguez <- read_tsv(Bellenguez_path, comment = "##",  col_types = coltypes, 
+                        col_select = c(DBSNP_ID, CHROM, POS, REF, ALT, AF, BETA, SE, Z, P, N))  %>%
+  rename(SNP = DBSNP_ID)
+
+```
+
+
+
+
+## Merging Exposure and outcome datasets (X and Y) and perform LHC-MR
+
+Will perform Multiple merging steps, as well as mulitple LHC-MR Analysis.
+Warning! : be sure to move all LHC results to a different folder before performing
+another LHC-MR paired analysis, as it will overwrite the previous ones results.
+Please check your directory to see where the files were placed and place them 
+in a new folder for safe keeping. 
+Perform one LHC-MR at a time.
+Running each LHC-MR pair will take approximately 6-12 hours depending on your machine
+and the amount of cores specified in "ncores" (more cores speeds up the process).
+
+
+
+## Chong-Kunkle-LHCMR
+
+```{r merge_Chong_Kunkle}
+## Step 1
+trait.names=c("mtDNAcn_Apoe_retained","AD")
+input.files = list(exposure_ss_Chong, outcome_ss_Kunkle)
+df = merge_sumstats(input.files, trait.names, LD.filepath, rho.filepath)
+```
+
+
+## Step 2: Calculating smart starting points for the likelihood optimisation
+
+```{r read_merge}
+SP_list = calculate_SP(df,trait.names,run_ldsc=TRUE,run_MR=TRUE,hm3=hm3,ld="Resources/eur_w_ld_chr",nStep = 2,
+                       SP_single=3,SP_pair=50,SNP_filter=10)
+```
+
+## Step 3: Running the likelihood optimisation to estimate the parameters, followed by a block-jackknife procedure to calculate parameter-SE
+
+```{r read_merge_LHCMR}
+## Step 3
+res_Chong_Kunkle_apoe_keep  = lhc_mr(SP_list, trait.names, paral_method="lapply", nCores = 1, nBlock=200)
+res_Chong_Kunkle_apoe_keep  %>% as_tibble() %>% write_csv(., "results/LHC_MR_Results_Chong_Kunkle/lhcmr_Chong_Kunkle_apoe_retained.csv")
+
+
+view(res_Chong_Kunkle_apoe_keep)
+
+
+
+```
+
+## Chong-Bellenguez-LHCMR
+
+```{r merge_Chong_Bellenguez}
+## Step 1
+trait.names=c("mtDNAcn_Apoe_retained_chong","AD_bellenguez")
+input.files = list(exposure_ss_Chong, outcome_ss_Bellenguez)
+df = merge_sumstats(input.files, trait.names, LD.filepath, rho.filepath)
+```
+
+
+## Step 2: Calculating smart starting points for the likelihood optimisation
+
+```{r read_merge}
+SP_list = calculate_SP(df,trait.names,run_ldsc=TRUE,run_MR=TRUE,hm3=hm3,ld="Resources/eur_w_ld_chr",nStep = 2,
+                       SP_single=3,SP_pair=50,SNP_filter=10)
+```
+
+## Step 3: Running the likelihood optimisation to estimate the parameters, followed by a block-jackknife procedure to calculate parameter-SE
+
+```{r read_merge_LHCMR}
+## Step 3
+res_Chong_Bellenguez_apoe_keep = lhc_mr(SP_list, trait.names, paral_method="lapply", nCores = 1, nBlock=200)
+res_Chong_Bellenguez_apoe_keep %>% as_tibble() %>% write_csv(., "results/LHC_MR_Results_Chong_Bellenguez/lhcmr_Chong_bellenguez_apoe_retained.csv")
+
+
+view(res_Chong_Bellenguez_apoe_keep)
+
+
+```
+
+## Longchamps-Bellenguez-LHCMR
+
+```{r merge_longchamps_Bellenguez}
+## Step 1
+trait.names=c("mtDNAcn_Apoe_retained_longchamps","AD_bellenguez")
+input.files = list(exposure_ss_Longchamps, outcome_ss_Bellenguez)
+df = merge_sumstats(input.files, trait.names, LD.filepath, rho.filepath)
+```
+
+
+## Step 2: Calculating smart starting points for the likelihood optimisation
+
+```{r read_merge}
+SP_list = calculate_SP(df,trait.names,run_ldsc=TRUE,run_MR=TRUE,hm3=hm3,ld="Resources/eur_w_ld_chr",nStep = 2,
+                       SP_single=3,SP_pair=50,SNP_filter=10)
+```
+
+## Step 3: Running the likelihood optimisation to estimate the parameters, followed by a block-jackknife procedure to calculate parameter-SE
+
+```{r read_merge_LHCMR}
+## Step 3
+res_longchamps_Bellenguez_apoe_keep = lhc_mr(SP_list, trait.names, paral_method="lapply", nCores = 1, nBlock=200)
+res_longchamps_Bellenguez_apoe_keep %>% as_tibble() %>% write_csv(., "results/LHC_MR_Results_Longchamps_Bellenguez/lhcmr_Longchamps_bellenguez_apoe_retained.csv")
+
+
+view(res_longchamps_Bellenguez_apoe_keep)
+
+
+```
+
+
+## Hagg-Bellenguez-LHCMR
+
+
+```{r merge_Hagg_Bellenguez}
+## Step 1
+trait.names=c("mtDNAcn_Apoe_retained_hagg","AD_bellenguez")
+input.files = list(exposure_ss_Hagg, outcome_ss_Bellenguez)
+df = merge_sumstats(input.files, trait.names, LD.filepath, rho.filepath)
+```
+
+
+## Step 2: Calculating smart starting points for the likelihood optimisation
+
+```{r read_merge}
+SP_list = calculate_SP(df,trait.names,run_ldsc=TRUE,run_MR=TRUE,hm3=hm3,ld="Resources/eur_w_ld_chr",nStep = 2,
+                       SP_single=3,SP_pair=50,SNP_filter=10)
+```
+
+## Step 3: Running the likelihood optimisation to estimate the parameters, followed by a block-jackknife procedure to calculate parameter-SE
+
+```{r read_merge_LHCMR}
+## Step 3
+res_Hagg_Bellenguez_apoe_keep = lhc_mr(SP_list, trait.names, paral_method="lapply", nCores = 1, nBlock=200)
+res_Hagg_Bellenguez_apoe_keep %>% as_tibble() %>% write_csv(., "results/LHC_MR_Results_Hagg_Bellenguez/lhcmr_Hagg_bellenguez_apoe_retained.csv")
+
+
+view(res_Hagg_Bellenguez_apoe_keep)
+
+
+```
