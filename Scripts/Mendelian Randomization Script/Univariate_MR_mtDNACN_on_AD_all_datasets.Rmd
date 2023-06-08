@@ -7,7 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 
-# Note: Run this code block manually by highlighting and running the indivudual lines.
+# Note: Run this code block manually by highlighting and running the individual lines.
 knitr::opts_chunk$set(echo = TRUE)
 
 knitr::opts_knit$set(root.dir = 'C:/Users/brian/OneDrive/Documents/GitHub/Casual_Estimate_mtDNAcn_on_Alzheimer')
@@ -42,6 +42,12 @@ library(LDlinkR) # LD and proxy snps
 library(lhcMR)
 
 library(janitor)
+
+library(grid)
+
+library(gridExtra)
+
+library(cowplot)
 ```
 
 
@@ -116,6 +122,12 @@ Format_mtDNAcn_chong <- Exposure_mtDNAcn_chong %>% format_data(.,
 )  %>%
   as_tibble()
 
+#Adds dataset name for identification in MR analysis
+
+Format_mtDNAcn_chong <- Format_mtDNAcn_chong %>%
+mutate(exposure = "mtDNA_chong")
+
+
 
 ```
 
@@ -155,6 +167,10 @@ Format_mtDNAcn_longchamps <- Exposure_mtDNAcn_longchamps %>% format_data(.,
 )  %>%
   as_tibble()
 
+#Adds dataset name for identification in MR analysis
+
+Format_mtDNAcn_longchamps <- Format_mtDNAcn_longchamps %>%
+mutate(exposure = "mtDNA_longchamps")
 
 
 ```
@@ -197,6 +213,11 @@ Format_mtDNAcn_hagg <- Exposure_mtDNAcn_hagg %>% format_data(.,
 )  %>%
   as_tibble()
 
+#Adds dataset name for identification in MR analysis
+
+Format_mtDNAcn_hagg <- Format_mtDNAcn_hagg %>%
+mutate(exposure = "mtDNA_hagg")
+
 ```
 
 
@@ -234,6 +255,11 @@ outcome_AD_Format_bellenguez <- OutcomeAD_bellenguez %>%
 ) %>%
   as_tibble()
 
+#Adds dataset name for identification in MR analysis
+
+outcome_AD_Format_bellenguez <- outcome_AD_Format_bellenguez %>%
+mutate(outcome = "AD_bellenguez")
+
 ```
 
 
@@ -269,7 +295,10 @@ outcome_AD_Format_kunkle <- OutcomeAD_kunkle %>%
 ) %>%
   as_tibble()
 
+#Adds dataset name for identification in MR analysis
 
+outcome_AD_Format_kunkle <- outcome_AD_Format_kunkle %>%
+mutate(outcome = "AD_kunkle")
 
 ```
 
@@ -279,7 +308,7 @@ This step involving clumping and pruning to eliminate High linkage
 disequilibrium SNP (SNPS correlated with other SNPs). Removing High linkage 
 disequilibrium SNP's are crucial to avoid "double counting" SNP's and
 biasing our MR estimate.
-The dataset will also be filter to remove a portion of insignficant SNP's for 
+The dataset will also be filter to remove a portion of insignificant SNP's for 
 computational speed improvements.
 
 ``` {r eval=FALSE}
@@ -357,7 +386,7 @@ exposure and outcome dataset by utilizing LD proxies in their place. This step w
 be done multiple times for each exposure > outcome pair.
 
 Note: If an error is encounter in the query request, check "exp_snps_wo"
-to see if there are any snps to query, if none exist (will return 0 rows), then no need to run LD proxies step.
+to see if there are any snps to query, if none exist (will return 0 rows), then no need to run LD proxies step for that exposure/outcome pair.
 Just run harmonzation on exposure outcome for that pair.
 Example: No outcome snps were missing in the exposure for
 longchamps_kunkle. So skip LD proxy step.
@@ -911,7 +940,7 @@ mtDNAcn_AD_Harm_chong_bellenguez <- harmonise_data(mtDNAcn_clump_chong, chong_be
 
 # longchamps_bellenguez_harmonization
 
-mtDNAcn_AD_Harm_longchamps_bellenguez <- harmonise_data(mtDNAcn_clump_longchamps, chong_bellenguez_dat_proxy,action=2)
+mtDNAcn_AD_Harm_longchamps_bellenguez <- harmonise_data(mtDNAcn_clump_longchamps, longchamps_bellenguez_dat_proxy,action=2)
 
 # hagg_bellenguez_harmonization
 
@@ -1009,7 +1038,6 @@ radial_p_longchamps_bellenguez_ivw
 AD_radial_ivw_mtDNAcn_hagg_bellenguez <- ivw_radial(mtDNAcn_AD_Harm_hagg_bellenguez, .05/nrow(mtDNAcn_AD_Harm_hagg_bellenguez), 2, .0001, TRUE)
 
 
-
 AD_radial_ivw_mtDNAcn_hagg_bellenguez 
 
 
@@ -1017,8 +1045,169 @@ radial_p_hagg_bellenguez_ivw <- plot_radial(AD_radial_ivw_mtDNAcn_hagg_bellengue
 
 radial_p_hagg_bellenguez_ivw
 
-```
 
+outlier_plots_set1<- grid.arrange(radial_p_chong_kunkle_ivw, radial_p_longchamps_kunkle_ivw, radial_p_hagg_kunkle_ivw, 
+nrow = 1,
+top = "longchamps_kunkle",
+left = "chong_kunkle",
+right= "hagg_kunkle"
+) 
+
+outlier_plots_set2 <- grid.arrange(radial_p_chong_bellenguez_ivw, radial_p_longchamps_bellenguez_ivw, radial_p_hagg_bellenguez_ivw, 
+nrow = 1,
+(arrangeGrob(p, top = 'title 1'), arrangeGrob(p, top = 'title 2'))
+) 
+
+
+outlier_plots_set2 <- grid.arrange(plot(radial_p_chong_bellenguez_ivw, main = 'chong_bellenguez'),
+plot(radial_p_longchamps_bellenguez_ivw, main = 'title2'), plot(radial_p_hagg_bellenguez_ivw, main = 'title3'))
+
+#Brian try making this work, if does not, just make to seprate figures for bellenguez/ kunkle
+outlier_plots_set1 <- grid.arrange( arrangeGrob(radial_p_chong_kunkle_ivw, top = grid::textGrob("Chong_Kunkle", x = 0.09, y = .5, hjust = 0, gp=gpar(fontsize=10))), arrangeGrob(radial_p_longchamps_kunkle_ivw, top = grid::textGrob("Longchamps_Kunkle", x = 0.09, y = .5, hjust = 0, gp=gpar(fontsize=10))), arrangeGrob(radial_p_hagg_kunkle_ivw, top = grid::textGrob("Hagg_Kunkle", x = 0.09, y = 0.5, hjust = 0, gp=gpar(fontsize=10))), nrow=2, ncol=3)
+
+
+
+outlier_plots_set2 <- grid.arrange( arrangeGrob(radial_p_chong_bellenguez_ivw, top = grid::textGrob("Chong_Bellenguez", x = 0.25, y = -4, hjust = 0)), arrangeGrob(radial_p_longchamps_bellenguez_ivw, top = grid::textGrob("Longchamps_Bellenguez", x = 0.25, y = -4, hjust = 0)), arrangeGrob(radial_p_hagg_bellenguez_ivw, top = grid::textGrob("Hagg_Bellenguez", x = 0.3, y = -4, hjust = 0 )), nrow=1) 
+
+
+
+arrangeGrob(radial_p_chong_bellenguez_ivw, top = grid::textGrob("Chong_Bellenguez", x = 0.25, y = .5, hjust = 0, gp=gpar(fontsize=10))), arrangeGrob(radial_p_longchamps_bellenguez_ivw, top = grid::textGrob("Longchamps_Bellenguez", x = 0.25, y = .5, hjust = 0, gp=gpar(fontsize=10))), arrangeGrob(radial_p_hagg_bellenguez_ivw, top = grid::textGrob("Hagg_Bellenguez", x = 0.3, y = 0.5, hjust = 0, gp=gpar(fontsize=10) )), nrow=2, ncol=3)
+
+
+```
+## Query outliers detected by Radial MR
+We use Phenoscanner to obtain more information on these variants.
+
+``` {r outlier_details}
+
+# Phenoscanner Chong_Kunkle
+
+phewas_data_apoe_retained_C_K <- phenoscanner(
+  snpquery=AD_radial_ivw_mtDNAcn_chong_kunkle$outliers$SNP, 
+  proxies='EUR', 
+  r2 = 0.8
+  ) 
+
+view(phewas_data_apoe_retained_C_K)
+
+
+# Phenoscanner Longchamps_Kunkle
+
+phewas_data_apoe_retained_L_K <- phenoscanner(
+  snpquery=AD_radial_ivw_mtDNAcn_longchamps_kunkle$outliers$SNP, 
+  proxies='EUR', 
+  r2 = 0.8
+  ) 
+
+view(phewas_data_apoe_retained_L_K)
+
+# Phenoscanner Hagg_Kunkle
+
+phewas_data_apoe_retained_H_K <- phenoscanner(
+  snpquery=AD_radial_ivw_mtDNAcn_hagg_kunkle$outliers$SNP, 
+  proxies='EUR', 
+  r2 = 0.8
+  ) 
+
+view(phewas_data_apoe_retained_H_K)
+
+
+# Phenoscanner Chong_Bellenguez
+
+phewas_data_apoe_retained_C_B <- phenoscanner(
+  snpquery=AD_radial_ivw_mtDNAcn_chong_bellenguez$outliers$SNP, 
+  proxies='EUR', 
+  r2 = 0.8
+  ) 
+ 
+
+# Phenoscanner Longchamps_Bellenguez
+
+phewas_data_apoe_retained_L_B <- phenoscanner(
+  snpquery=AD_radial_ivw_mtDNAcn_longchamps_bellenguez$outliers$SNP, 
+  proxies='EUR', 
+  r2 = 0.8
+  ) 
+
+view(phewas_data_apoe_retained_L_B)
+
+
+# No outliers for  Hagg_Bellenguez
+
+# Unique Traits associated with outliers
+
+# Chong Kunkle
+
+Traits_C_K <- phewas_data_apoe_retained_C_K$results
+
+view (Traits_C_K) 
+
+length(unique(Traits_C_K$trait))
+
+# Longchamps Kunkle
+
+Traits_L_K <- phewas_data_apoe_retained_L_K$results
+
+view (Traits_L_K) 
+
+length(unique(Traits_L_K$trait))
+
+# Hagg Kunkle
+
+Traits_H_K <- phewas_data_apoe_retained_H_K$results
+
+view (Traits_H_K) 
+
+length(unique(Traits_H_K$trait))
+
+# Chong Bellenguez (Multiple outliers requires grouping)
+
+Traits_C_B <- phewas_data_apoe_retained_C_B$results
+
+
+Traits_C_B_uni_count <- Traits_C_B %>%
+  group_by(snp) %>%
+  summarize(count = n_distinct(trait))
+
+view(Traits_C_B_uni_count)
+
+view (Traits_C_B) 
+
+
+# Longchamps Bellenguez 
+
+Traits_L_B <- phewas_data_apoe_retained_L_B$results
+
+Traits_L_B_uni_count <- Traits_L_B %>%
+  group_by(snp) %>%
+  summarize(count = n_distinct(trait))
+
+length(unique(Traits_L_B$trait))
+
+
+
+view (Traits_L_B) 
+
+
+
+# No outliers for Hagg Bellenguez 
+
+
+# Export Outlier details tables.
+
+write_csv(Traits_C_K, 'Casual_Estimate_mtDNAcn_on_Alzheimer/results/Outliers_Plots_All/Traits_C_K.csv')
+
+write_csv(Traits_L_K, 'Casual_Estimate_mtDNAcn_on_Alzheimer/results/Outliers_Plots_All/Traits_L_K.csv')
+
+write_csv(Traits_H_K, 'Casual_Estimate_mtDNAcn_on_Alzheimer/results/Outliers_Plots_All/Traits_H_K.csv')
+
+write_csv(Traits_C_B, 'Casual_Estimate_mtDNAcn_on_Alzheimer/results/Outliers_Plots_All/Traits_C_B.csv')
+
+write_csv(Traits_L_B, 'Casual_Estimate_mtDNAcn_on_Alzheimer/results/Outliers_Plots_All/Traits_L_B.csv')
+
+
+
+```
 
 ## Export Radial Plots for all pairs
 
@@ -1036,6 +1225,12 @@ ggsave('results/Outliers_Plots_All/mr_radial_IVW_chong_bellenguez.png', plot = r
 ggsave('results/Outliers_Plots_All/mr_radial_IVW_longchamps_bellenguez.png', plot = radial_p_longchamps_bellenguez_ivw, units = 'in', height = 4, width = 9)
 
 ggsave('results/Outliers_Plots_All/mr_radial_IVW_hagg_bellenguez.png', plot = radial_p_hagg_bellenguez_ivw, units = 'in', height = 4, width = 9)
+
+ggsave('results/Outliers_Plots_All/mr_radial_IVW_set1.png', plot = outlier_plots_set1, units = 'in', height = 4, width = 9)
+
+ggsave('results/Outliers_Plots_All/mr_radial_IVW_set2.png', plot = outlier_plots_set2, units = 'in', height = 4, width = 9)
+
+
 
 ```
 
@@ -1101,8 +1296,6 @@ mtDNAcn_AD_Harm_Outlier_hagg_bellenguez <- mtDNAcn_AD_Harm_hagg_bellenguez %>%
 ```
 
 
-
-
 # Appending Step
 
 ``` {r append_all_data}
@@ -1118,7 +1311,7 @@ view(mtDNAcn_AD_harm_appended)
 write_csv(mtDNAcn_AD_harm_appended, 'data/Harmonized_Datasets/harmonized_data_appended.csv')
 # mtDNAcn_AD_harm_appended <- read_csv('data/Harmonized_Datasets/harmonized_data_appended.csv')
 
-
+ 
 ```
 
 
@@ -1136,7 +1329,6 @@ Mr_mtDNAcn_AD_appended_Prime_OR <- generate_odds_ratios(Mr_mtDNAcn_AD_appended_P
 view (Mr_mtDNAcn_AD_appended_Prime_OR )
 
 
-
 ```
 
 ## Perform Outlier Removed Sensentivity analysis
@@ -1152,56 +1344,304 @@ Mr_Horizontal_Test_prime <- mr_pleiotropy_test(mtDNAcn_AD_harm_appended)
 
 View(Mr_Horizontal_Test_prime)
 
-# Directionality test (testing whether Exposure >Outcome direction is true casual direction)
 
 
-#This may no longer be necessary
-AD_direction_Outlier_mtDNAcn_chong <- directionality_test(mtDNAcn_AD_Harm_Outlier_chong)
-
-View(AD_direction_Outlier_mtDNAcn_chong)
 
 ```
 
-
 ## Preliminary Plots
-``` {r Preliminary_plots}
+Using separate datasets to generate plots for each exposure outcome pair.
 
-MrAD_single_mtDNAcn_Prime <- mr_singlesnp(mtDNAcn_AD_harm_appended)
+``` {r plots_}
+# Chong_kunkle Preparation
 
-MrAD_loo_mtDNAcn_Prime <- mr_leaveoneout(mtDNAcn_AD_harm_appended)
+MrAD_single_mtDNAcn_Prime_c_k <- mr_singlesnp(mtDNAcn_AD_Harm_Outlier_chong_kunkle)
 
-# Generates Plots of single and leave one out anlysis MR.
+MrAD_loo_mtDNAcn_Prime_c_k <- mr_leaveoneout(mtDNAcn_AD_Harm_Outlier_chong_kunkle)
 
-p1_Prime_Single <- mr_forest_plot(MrAD_single_mtDNAcn_Prime )
-p1_Prime_Single [[1]]
+#longchamps_kunkle Preparation
 
-P2_Prime_Funnel_single <- mr_funnel_plot(MrAD_single_mtDNAcn_Prime)
-P2_Prime_Funnel_single[[1]]
+MrAD_single_mtDNAcn_Prime_l_k <- mr_singlesnp(mtDNAcn_AD_Harm_Outlier_longchamps_kunkle)
 
-p3_Prime_loo <- mr_leaveoneout_plot(MrAD_loo_mtDNAcn_Prime)
-p3_Prime_loo[[1]]
+MrAD_loo_mtDNAcn_Prime_l_k <- mr_leaveoneout(mtDNAcn_AD_Harm_Outlier_longchamps_kunkle)
 
-# To plot preliminary MR analysis scatter plot, must rerun and rename.
 
-MR_scatter_mtDNAcn_ad <- mr(mtDNAcn_AD_harm_appended)
+# hagg_kunkle Preparation
 
-p4_Prime_scatter <- mr_scatter_plot(MR_scatter_mtDNAcn_ad, mtDNAcn_AD_harm_appended)
+MrAD_single_mtDNAcn_Prime_h_k <- mr_singlesnp(mtDNAcn_AD_Harm_Outlier_hagg_kunkle)
 
-p4_scatter_prime_format <- p4_Prime_scatter[[1]] + theme_bw() + 
+MrAD_loo_mtDNAcn_Prime_h_k <- mr_leaveoneout(mtDNAcn_AD_Harm_Outlier_hagg_kunkle)
+
+# chong_bellenguez Preparation
+MrAD_single_mtDNAcn_Prime_c_b <- mr_singlesnp(mtDNAcn_AD_Harm_Outlier_chong_bellenguez)
+
+MrAD_loo_mtDNAcn_Prime_c_b <- mr_leaveoneout(mtDNAcn_AD_Harm_Outlier_chong_bellenguez)
+
+# longchamps_bellenguez Preparation
+
+MrAD_single_mtDNAcn_Prime_l_b <- mr_singlesnp(mtDNAcn_AD_Harm_Outlier_longchamps_bellenguez)
+
+MrAD_loo_mtDNAcn_Prime_l_b <- mr_leaveoneout(mtDNAcn_AD_Harm_Outlier_longchamps_bellenguez)
+
+# hagg_bellenguez Preparation
+
+MrAD_single_mtDNAcn_Prime_h_b <- mr_singlesnp(mtDNAcn_AD_Harm_Outlier_hagg_bellenguez)
+
+MrAD_loo_mtDNAcn_Prime_h_b <- mr_leaveoneout(mtDNAcn_AD_Harm_Outlier_hagg_bellenguez)
+
+# Generates Plots of single and leave one out anlysis MR
+
+# Chong_kunkle Plots
+
+
+p1_Prime_Single_c_k <- mr_forest_plot(MrAD_single_mtDNAcn_Prime_c_k )
+p1_Prime_Single_c_k [[1]]
+
+P2_Prime_Funnel_single_c_k <- mr_funnel_plot(MrAD_single_mtDNAcn_Prime_c_k)
+P2_Prime_Funnel_single_c_k[[1]]
+
+p3_Prime_loo_c_k <- mr_leaveoneout_plot(MrAD_loo_mtDNAcn_Prime_c_k)
+p3_Prime_loo_c_k[[1]]
+
+
+# Note, indivdual MR must be run in this step to create the plot
+
+MR_scatter_mtDNAcn_ad <- mr(mtDNAcn_AD_Harm_Outlier_chong_kunkle)
+
+p4_Prime_scatter <- mr_scatter_plot(MR_scatter_mtDNAcn_ad, mtDNAcn_AD_Harm_Outlier_chong_kunkle)
+
+p4_scatter_prime_format_c_k <- p4_Prime_scatter[[1]] + theme_bw() + 
   guides(color=guide_legend(ncol =1)) + 
   theme(
     text = element_text(size = 8), 
   )
-p4_scatter_prime_format
+p4_scatter_prime_format_c_k
+
+
+# longchamps_kunkle Plots
+
+p1_Prime_Single_l_k <- mr_forest_plot(MrAD_single_mtDNAcn_Prime_l_k )
+p1_Prime_Single_l_k [[1]]
+
+P2_Prime_Funnel_single_l_k <- mr_funnel_plot(MrAD_single_mtDNAcn_Prime_l_k)
+P2_Prime_Funnel_single_l_k[[1]]
+
+p3_Prime_loo_l_k <- mr_leaveoneout_plot(MrAD_loo_mtDNAcn_Prime_l_k)
+p3_Prime_loo_l_k[[1]]
+
+
+MR_scatter_mtDNAcn_ad <- mr(mtDNAcn_AD_Harm_Outlier_longchamps_kunkle)
+
+p4_Prime_scatter <- mr_scatter_plot(MR_scatter_mtDNAcn_ad, mtDNAcn_AD_Harm_Outlier_longchamps_kunkle)
+
+p4_scatter_prime_format_l_k <- p4_Prime_scatter[[1]] + theme_bw() + 
+  guides(color=guide_legend(ncol =1)) + 
+  theme(
+    text = element_text(size = 8), 
+  )
+p4_scatter_prime_format_l_k
+
+
+# hagg_kunkle Plots
+
+p1_Prime_Single_h_k <- mr_forest_plot(MrAD_single_mtDNAcn_Prime_h_k )
+p1_Prime_Single_h_k [[1]]
+
+P2_Prime_Funnel_single_h_k <- mr_funnel_plot(MrAD_single_mtDNAcn_Prime_h_k)
+P2_Prime_Funnel_single_h_k[[1]]
+
+p3_Prime_loo_h_k <- mr_leaveoneout_plot(MrAD_loo_mtDNAcn_Prime_h_k)
+p3_Prime_loo_h_k[[1]]
+
+
+MR_scatter_mtDNAcn_ad <- mr(mtDNAcn_AD_Harm_Outlier_hagg_kunkle)
+
+p4_Prime_scatter <- mr_scatter_plot(MR_scatter_mtDNAcn_ad, mtDNAcn_AD_Harm_Outlier_hagg_kunkle)
+
+p4_scatter_prime_format_h_k <- p4_Prime_scatter[[1]] + theme_bw() + 
+  guides(color=guide_legend(ncol =1)) + 
+  theme(
+    text = element_text(size = 8), 
+  )
+p4_scatter_prime_format_h_k
+
+# Chong_bellenguez Plots
+
+p1_Prime_Single_c_b <- mr_forest_plot(MrAD_single_mtDNAcn_Prime_c_b )
+p1_Prime_Single_c_b [[1]]
+
+P2_Prime_Funnel_single_c_b <- mr_funnel_plot(MrAD_single_mtDNAcn_Prime_c_b)
+P2_Prime_Funnel_single_c_b[[1]]
+
+p3_Prime_loo_c_b <- mr_leaveoneout_plot(MrAD_loo_mtDNAcn_Prime_c_b)
+p3_Prime_loo_c_b[[1]]
+
+MR_scatter_mtDNAcn_ad <- mr(mtDNAcn_AD_Harm_Outlier_chong_bellenguez)
+
+p4_Prime_scatter <- mr_scatter_plot(MR_scatter_mtDNAcn_ad, mtDNAcn_AD_Harm_Outlier_chong_bellenguez)
+
+p4_scatter_prime_format_c_b <- p4_Prime_scatter[[1]] + theme_bw() + 
+  guides(color=guide_legend(ncol =1)) + 
+  theme(
+    text = element_text(size = 8), 
+  )
+p4_scatter_prime_format_c_b
+
+# longchamps_bellenguez Plots
+
+p1_Prime_Single_l_b <- mr_forest_plot(MrAD_single_mtDNAcn_Prime_l_b )
+p1_Prime_Single_l_b [[1]]
+
+P2_Prime_Funnel_single_l_b <- mr_funnel_plot(MrAD_single_mtDNAcn_Prime_l_b)
+P2_Prime_Funnel_single_l_b[[1]]
+
+p3_Prime_loo_l_b <- mr_leaveoneout_plot(MrAD_loo_mtDNAcn_Prime_l_b)
+p3_Prime_loo_l_b[[1]]
+
+
+MR_scatter_mtDNAcn_ad <- mr(mtDNAcn_AD_Harm_Outlier_longchamps_bellenguez)
+
+p4_Prime_scatter <- mr_scatter_plot(MR_scatter_mtDNAcn_ad, mtDNAcn_AD_Harm_Outlier_longchamps_bellenguez)
+
+p4_scatter_prime_format_l_b <- p4_Prime_scatter[[1]] + theme_bw() + 
+  guides(color=guide_legend(ncol =1)) + 
+  theme(
+    text = element_text(size = 8), 
+  )
+p4_scatter_prime_format_l_b
+
+# hagg_bellenguez Plots
+
+p1_Prime_Single_h_b <- mr_forest_plot(MrAD_single_mtDNAcn_Prime_h_b )
+p1_Prime_Single_h_b [[1]]
+
+P2_Prime_Funnel_single_h_b <- mr_funnel_plot(MrAD_single_mtDNAcn_Prime_h_b)
+P2_Prime_Funnel_single_h_b[[1]]
+
+p3_Prime_loo_h_b <- mr_leaveoneout_plot(MrAD_loo_mtDNAcn_Prime_h_b)
+p3_Prime_loo_h_b[[1]]
+
+
+MR_scatter_mtDNAcn_ad <- mr(mtDNAcn_AD_Harm_Outlier_hagg_bellenguez)
+
+p4_Prime_scatter <- mr_scatter_plot(MR_scatter_mtDNAcn_ad, mtDNAcn_AD_Harm_Outlier_hagg_bellenguez)
+
+p4_scatter_prime_format_h_b <- p4_Prime_scatter[[1]] + theme_bw() + 
+  guides(color=guide_legend(ncol =1)) + 
+  theme(
+    text = element_text(size = 8), 
+  )
+p4_scatter_prime_format_h_b
+
+
+
+# Combines somes plots onto one page.
+
+leaveone_combine <- list(p3_Prime_loo_c_k, p3_Prime_loo_l_k, p3_Prime_loo_h_k, p3_Prime_loo_c_b, p3_Prime_loo_l_b, p3_Prime_loo_h_b)
+
+leaveone_combine = lapply(leaveone_combine, ggplotGrob)
+
+leaveoneout_plots_set<- grid.arrange(leaveone_combine,
+nrow = 2 ,
+top = "Leave_one_out_plots"
+) 
+
+
+
+p1_Prime_Single_c_k<- as_grob(p1_Prime_Single_c_k, device = NULL)
+
+boxC <- list(box1,box2)
+```
+
+## Export Plots MR analsis
+
+``` {r export_dataset_pairs}
+# Plots for individual dataset pairs
+# Single SNP plots
+
+ggsave('results/Plots_all_data/mr_single_Forest_Prime_c_k.png', plot = p1_Prime_Single_c_k [[1]], units = 'in', height = 4, width = 9)
+
+ggsave('results/Plots_all_data/mr_single_Forest_Prime_l_k.png', plot = p1_Prime_Single_l_k [[1]], units = 'in', height = 4, width = 9)
+
+
+ggsave('results/Plots_all_data/mr_single_Forest_Prime_h_k.png', plot = p1_Prime_Single_h_k [[1]], units = 'in', height = 4, width = 9)
+
+
+ggsave('results/Plots_all_data/mr_single_Forest_Prime_c_b.png', plot = p1_Prime_Single_c_b [[1]], units = 'in', height = 4, width = 9)
+
+
+ggsave('results/Plots_all_data/mr_single_Forest_Prime_l_b.png', plot = p1_Prime_Single_l_b [[1]], units = 'in', height = 4, width = 9)
+
+
+ggsave('results/Plots_all_data/mr_single_Forest_Prime_h_b.png', plot = p1_Prime_Single_h_b [[1]], units = 'in', height = 4, width = 9)
+
+
+
+
+# Plots Leave one out for individual dataset pairs.
+
+ggsave('results/Plots_all_data/mr_forest_loo_Prime_c_k.png', plot =p3_Prime_loo_c_k[[1]] + theme(text = element_text(size = 8)), units = 'in', height = 9, width = 9)
+
+
+ggsave('results/Plots_all_data/mr_forest_loo_Prime_l_k.png', plot =p3_Prime_loo_l_k[[1]] + theme(text = element_text(size = 8)), units = 'in', height = 9, width = 9)
+
+
+ggsave('results/Plots_all_data/mr_forest_loo_Prime_h_k.png', plot =p3_Prime_loo_h_k[[1]] + theme(text = element_text(size = 8)), units = 'in', height = 9, width = 9)
+
+
+
+ggsave('results/Plots_all_data/mr_forest_loo_Prime_c_b.png', plot =p3_Prime_loo_c_b[[1]] + theme(text = element_text(size = 8)), units = 'in', height = 9, width = 9)
+
+
+ggsave('results/Plots_all_data/mr_forest_loo_Prime_l_b.png', plot =p3_Prime_loo_l_b[[1]] + theme(text = element_text(size = 8)), units = 'in', height = 9, width = 9)
+
+
+ggsave('results/Plots_all_data/mr_forest_loo_Prime_h_b.png', plot =p3_Prime_loo_h_b[[1]] + theme(text = element_text(size = 8)), units = 'in', height = 9, width = 9)
+
+# Funnel plots for dataset pairs
+
+ggsave('results/Plots_all_data/mr_funnel_Single_Prime_c_k.png', plot = P2_Prime_Funnel_single_c_k[[1]], units = 'in', height = 4, width = 9)
+
+
+ggsave('results/Plots_all_data/mr_funnel_Single_Prime_l_k.png', plot = P2_Prime_Funnel_single_l_k[[1]], units = 'in', height = 4, width = 9)
+
+ggsave('results/Plots_all_data/mr_funnel_Single_Prime_h_k.png', plot = P2_Prime_Funnel_single_h_k[[1]], units = 'in', height = 4, width = 9)
+
+ggsave('results/Plots_all_data/mr_funnel_Single_Prime_c_b.png', plot = P2_Prime_Funnel_single_c_b[[1]], units = 'in', height = 4, width = 9)
+
+
+ggsave('results/Plots_all_data/mr_funnel_Single_Prime_l_b.png', plot = P2_Prime_Funnel_single_l_b[[1]], units = 'in', height = 4, width = 9)
+
+
+ggsave('results/Plots_all_data/mr_funnel_Single_Prime_h_b.png', plot = P2_Prime_Funnel_single_h_b[[1]], units = 'in', height = 4, width = 9)
+
+# Plots Scatter for dataset pairs
+
+
+ggsave('results/Plots_all_data/mr_scatter_Prime_c_k.png', plot = p4_scatter_prime_format_c_k, units = 'in', height = 4, width = 9)
+
+
+ggsave('results/Plots_all_data/mr_scatter_Prime_l_k.png', plot = p4_scatter_prime_format_l_k, units = 'in', height = 4, width = 9)
+
+ggsave('results/Plots_all_data/mr_scatter_Prime_h_k.png', plot = p4_scatter_prime_format_h_k, units = 'in', height = 4, width = 9)
+
+ggsave('results/Plots_all_data/mr_scatter_Prime_c_b.png', plot = p4_scatter_prime_format_c_b, units = 'in', height = 4, width = 9)
+
+
+ggsave('results/Plots_all_data/mr_scatter_Prime_l_b.png', plot = p4_scatter_prime_format_l_b, units = 'in', height = 4, width = 9)
+
+
+ggsave('results/Plots_all_data/mr_scatter_Prime_h_b.png', plot = p4_scatter_prime_format_h_b, units = 'in', height = 4, width = 9)
 
 ```
+
 
 
 ## Export preliminary MR Results
 
 ```{r preliminary_results}
 # MR Analysis
-write_csv(Mr_mtDNAcn_AD_appended_Prime_OR , 'results/MR_Results_all datasets/MR_Prime.csv')
+write_csv(Mr_mtDNAcn_AD_appended_Prime_OR , 'results/MR_Results_all_datasets/MR_Prime.csv')
 
 # Sensitivity Tests
 
@@ -1209,8 +1649,6 @@ write_csv(Mr_H_Test_prime , 'results/Sensitivity_Tests_all_datasets/mr_het_res_P
 write_csv(Mr_Horizontal_Test_prime , 'results/Sensitivity_Tests_all_datasets/mr_hor_plt_res_Prime.csv')
 
 
-#Code for directional effects may be removed (i did not run this code)
-write_csv(AD_direction_Prime_mtDNAcn_chong , 'results/Sensitivity_Tests_Chong/Directional_Chong_Prime.csv')
 
 # Plots
 
@@ -1225,9 +1663,11 @@ ggsave('results/Plots_all_data/mr_scatter_Prime.png', plot = p4_scatter_prime_fo
 
 
 
-## Filter APOE Region.
-Removal of the Apoe region from both the Exposure and Outcome datasets. Creates
-a new Binary variable apoe_region and filters dataset based on that column.
+## APOE Region removed MR.
+Removal of the Apoe region from both the Exposure and Outcome datasets before Radial MR
+and MR analysis. 
+Creates a new Binary variable apoe_region and filters dataset based on that column.
+(Brian,Change all names to radial versions of the names.)
 
 ``` {r filter_exposures}
 
@@ -1236,88 +1676,248 @@ a new Binary variable apoe_region and filters dataset based on that column.
 
 # For Chong Kunkle
 
-chong_kunkle_omit_apoe <- mtDNAcn_AD_Harm_chong_kunkle %>%
-  left_join(AD_radial_ivw_mtDNAcn_chong_kunkle$data) %>%
-  mutate(
-    apoe_region = case_when(
-      chr.outcome == 19 & between(pos.outcome,44912079,45912079) ~ TRUE,
-      TRUE ~ FALSE
-    ),
-    gws.outcome = ifelse(pval.outcome <5e-8, TRUE, FALSE),
-    mr_keep = ifelse(mr_keep == FALSE | Outliers == "Outlier" | apoe_region == TRUE | gws.outcome == TRUE, FALSE, TRUE)
-  )
-
-
+mtDNAcn_AD_Harm_chong_kunkle_apoeomit <-  filter(mtDNAcn_AD_Harm_chong_kunkle, !(chr.exposure == 19 & between(pos.exposure, 44912079, 45912079))) 
 
 # For Longchamps Kunkle
-
-longchamps_kunkle_omit_apoe <- mtDNAcn_AD_Harm_longchamps_kunkle %>%
-  left_join(AD_radial_ivw_mtDNAcn_longchamps_kunkle$data) %>%
-  mutate(
-    apoe_region = case_when(
-      chr.outcome == 19 & between(pos.outcome,44912079,45912079) ~ TRUE,
-      TRUE ~ FALSE
-    ),
-    gws.outcome = ifelse(pval.outcome <5e-8, TRUE, FALSE),
-    mr_keep = ifelse(mr_keep == FALSE | Outliers == "Outlier" | apoe_region == TRUE | gws.outcome == TRUE, FALSE, TRUE)
-  )
+mtDNAcn_AD_Harm_longchamps_kunkle_apoeomit <-  filter(mtDNAcn_AD_Harm_longchamps_kunkle, !(chr.exposure == 19 & between(pos.exposure, 44912079, 45912079))) 
 
 # For Hagg Kunkle
-
-hagg_kunkle_omit_apoe <- mtDNAcn_AD_Harm_hagg_kunkle %>%
-  left_join(AD_radial_ivw_mtDNAcn_hagg_kunkle$data) %>%
-  mutate(
-    apoe_region = case_when(
-      chr.outcome == 19 & between(pos.outcome,44912079,45912079) ~ TRUE,
-      TRUE ~ FALSE
-    ),
-    gws.outcome = ifelse(pval.outcome <5e-8, TRUE, FALSE),
-    mr_keep = ifelse(mr_keep == FALSE | Outliers == "Outlier" | apoe_region == TRUE | gws.outcome == TRUE, FALSE, TRUE)
-  )
-
+mtDNAcn_AD_Harm_hagg_kunkle_apoeomit <-  filter(mtDNAcn_AD_Harm_hagg_kunkle, !(chr.exposure == 19 & between(pos.exposure, 44912079, 45912079))) 
 
 # For Chong Bellenguez
-
-chong_bellenguez_omit_apoe <- mtDNAcn_AD_Harm_chong_bellenguez %>%
-  left_join(AD_radial_ivw_mtDNAcn_chong_bellenguez$data) %>%
-  mutate(
-    apoe_region = case_when(
-      chr.outcome == 19 & between(pos.outcome,44912079,45912079) ~ TRUE,
-      TRUE ~ FALSE
-    ),
-    gws.outcome = ifelse(pval.outcome <5e-8, TRUE, FALSE),
-    mr_keep = ifelse(mr_keep == FALSE | Outliers == "Outlier" | apoe_region == TRUE | gws.outcome == TRUE, FALSE, TRUE)
-  )
+mtDNAcn_AD_Harm_chong_bellenguez_apoeomit <-  filter(mtDNAcn_AD_Harm_chong_bellenguez, !(chr.exposure == 19 & between(pos.exposure, 44912079, 45912079))) 
 
 # For Longchamps Bellenguez
-
-longchamps_bellenguez_omit_apoe <- mtDNAcn_AD_Harm_longchamps_bellenguez %>%
-  left_join(AD_radial_ivw_mtDNAcn_longchamps_bellenguez$data) %>%
-  mutate(
-    apoe_region = case_when(
-      chr.outcome == 19 & between(pos.outcome,44912079,45912079) ~ TRUE,
-      TRUE ~ FALSE
-    ),
-    gws.outcome = ifelse(pval.outcome <5e-8, TRUE, FALSE),
-    mr_keep = ifelse(mr_keep == FALSE | Outliers == "Outlier" | apoe_region == TRUE | gws.outcome == TRUE, FALSE, TRUE)
-  )
+mtDNAcn_AD_Harm_longchamps_bellenguez_apoeomit <-  filter(mtDNAcn_AD_Harm_longchamps_bellenguez, !(chr.exposure == 19 & between(pos.exposure, 44912079, 45912079))) 
 
 # For Hagg Bellenguez
+mtDNAcn_AD_Harm_hagg_bellenguez_apoeomit <-  filter(mtDNAcn_AD_Harm_hagg_bellenguez, !(chr.exposure == 19 & between(pos.exposure, 44912079, 45912079))) 
 
-hagg_bellenguez_omit_apoe <- mtDNAcn_AD_Harm_hagg_bellenguez %>%
-  left_join(AD_radial_ivw_mtDNAcn_hagg_bellenguez$data) %>%
-  mutate(
-    apoe_region = case_when(
-      chr.outcome == 19 & between(pos.outcome,44912079,45912079) ~ TRUE,
-      TRUE ~ FALSE
-    ),
-    gws.outcome = ifelse(pval.outcome <5e-8, TRUE, FALSE),
-    mr_keep = ifelse(mr_keep == FALSE | Outliers == "Outlier" | apoe_region == TRUE | gws.outcome == TRUE, FALSE, TRUE)
-  )
+
 
 
 ```
 
+## Radial MR on apoe removed datasets to Remove Outliers in each dataset pair.
+
+Radial MR will be ran first to Remove the presence of outliers.
+
+``` {r}
+#  Correction for Multiple testing bonferroni correction .05/nrow
+
+# Chong Kunkle pair
+
+AD_radial_ivw_mtDNAcn_chong_kunkle_apoeomit <- ivw_radial(mtDNAcn_AD_Harm_chong_kunkle_apoeomit, .05/nrow(mtDNAcn_AD_Harm_chong_kunkle_apoeomit), 2, .0001, TRUE)
+
+
+
+
+#To view radial MR
+
+AD_radial_ivw_mtDNAcn_chong_kunkle_apoeomit
+
+
+# Static plot results of Radial MR
+
+radial_p_chong_kunkle_ivw_apoeomit <- plot_radial(AD_radial_ivw_mtDNAcn_chong_kunkle_apoeomit, radial_scale = F, show_outliers = T)
+
+radial_p_chong_kunkle_ivw_apoeomit
+
+
+# longchamps Kunkle pair
+
+AD_radial_ivw_mtDNAcn_longchamps_kunkle_apoeomit <- ivw_radial(mtDNAcn_AD_Harm_longchamps_kunkle_apoeomit, .05/nrow(mtDNAcn_AD_Harm_longchamps_kunkle_apoeomit), 2, .0001, TRUE)
+
+
+
+AD_radial_ivw_mtDNAcn_longchamps_kunkle_apoeomit 
+
+
+radial_p_longchamps_kunkle_ivw_apoeomit <- plot_radial(AD_radial_ivw_mtDNAcn_longchamps_kunkle_apoeomit, radial_scale = F, show_outliers = T)
+
+radial_p_longchamps_kunkle_ivw_apoeomit
+
+
+# Hagg Kunkle pair
+
+AD_radial_ivw_mtDNAcn_hagg_kunkle_apoeomit <- ivw_radial(mtDNAcn_AD_Harm_hagg_kunkle_apoeomit, .05/nrow(mtDNAcn_AD_Harm_hagg_kunkle_apoeomit), 2, .0001, TRUE)
+
+
+
+AD_radial_ivw_mtDNAcn_hagg_kunkle_apoeomit 
+
+
+radial_p_hagg_kunkle_ivw_apoeomit <- plot_radial(AD_radial_ivw_mtDNAcn_hagg_kunkle_apoeomit, radial_scale = F, show_outliers = T)
+
+radial_p_hagg_kunkle_ivw_apoeomit
+
+
+
+# Chong Bellenguez pair
+
+AD_radial_ivw_mtDNAcn_chong_bellenguez_apoeomit <- ivw_radial(mtDNAcn_AD_Harm_chong_bellenguez_apoeomit, .05/nrow(mtDNAcn_AD_Harm_chong_bellenguez_apoeomit), 2, .0001, TRUE)
+
+
+
+AD_radial_ivw_mtDNAcn_chong_bellenguez_apoeomit 
+
+
+radial_p_chong_bellenguez_ivw_apoeomit <- plot_radial(AD_radial_ivw_mtDNAcn_chong_bellenguez_apoeomit, radial_scale = F, show_outliers = T)
+
+radial_p_chong_bellenguez_ivw_apoeomit
+
+
+# longchamps Bellenguez pair
+
+AD_radial_ivw_mtDNAcn_longchamps_bellenguez_apoeomit <- ivw_radial(mtDNAcn_AD_Harm_longchamps_bellenguez_apoeomit, .05/nrow(mtDNAcn_AD_Harm_longchamps_bellenguez_apoeomit), 2, .0001, TRUE)
+
+
+
+AD_radial_ivw_mtDNAcn_longchamps_bellenguez_apoeomit 
+
+
+radial_p_longchamps_bellenguez_ivw_apoeomit <- plot_radial(AD_radial_ivw_mtDNAcn_longchamps_bellenguez_apoeomit, radial_scale = F, show_outliers = T)
+
+radial_p_longchamps_bellenguez_ivw_apoeomit
+
+
+# Hagg Bellenguez pair
+
+AD_radial_ivw_mtDNAcn_hagg_bellenguez_apoeomit <- ivw_radial(mtDNAcn_AD_Harm_hagg_bellenguez_apoeomit, .05/nrow(mtDNAcn_AD_Harm_hagg_bellenguez_apoeomit), 2, .0001, TRUE)
+
+
+
+AD_radial_ivw_mtDNAcn_hagg_bellenguez_apoeomit 
+
+
+radial_p_hagg_bellenguez_ivw_apoeomit <- plot_radial(AD_radial_ivw_mtDNAcn_hagg_bellenguez_apoeomit, radial_scale = F, show_outliers = T)
+
+radial_p_hagg_bellenguez_ivw_apoeomit
+
+
+outlier_plots_set1_apoeomit <- grid.arrange(radial_p_chong_kunkle_ivw_apoeomit, radial_p_longchamps_kunkle_ivw_apoeomit, radial_p_hagg_kunkle_ivw_apoeomit, 
+nrow = 1,
+top = "longchamps_kunkle",
+left = "chong_kunkle",
+right= "hagg_kunkle"
+) 
+
+outlier_plots_set2_apoeomit <- grid.arrange(radial_p_chong_bellenguez_ivw_apoeomit, radial_p_longchamps_bellenguez_ivw_apoeomit, radial_p_hagg_bellenguez_ivw_apoeomit, 
+nrow = 1,
+top = "longchamps_bellenguez",
+left = "chong_bellenguez",
+right= "hagg_bellenguez"
+) 
+
+
+
+```
+
+
+## Export Radial Plots for all pairs
+
+``` {r radial_outliers_export}
+
+
+ggsave('results/Outliers_Plots_All/mr_radial_IVW_chong_kunkle_apoeomit.png', plot = radial_p_chong_kunkle_ivw_apoeomit, units = 'in', height = 4, width = 9)
+
+ggsave('results/Outliers_Plots_All/mr_radial_IVW_longchamps_kunkle_apoeomit.png', plot = radial_p_longchamps_kunkle_ivw_apoeomit, units = 'in', height = 4, width = 9)
+
+ggsave('results/Outliers_Plots_All/mr_radial_IVW_hagg_kunkle_apoeomit.png', plot = radial_p_hagg_kunkle_ivw_apoeomit, units = 'in', height = 4, width = 9)
+
+ggsave('results/Outliers_Plots_All/mr_radial_IVW_chong_bellenguez_apoeomit.png', plot = radial_p_chong_bellenguez_ivw_apoeomit, units = 'in', height = 4, width = 9)
+
+ggsave('results/Outliers_Plots_All/mr_radial_IVW_longchamps_bellenguez_apoeomit.png', plot = radial_p_longchamps_bellenguez_ivw_apoeomit, units = 'in', height = 4, width = 9)
+
+ggsave('results/Outliers_Plots_All/mr_radial_IVW_hagg_bellenguez_apoeomit.png', plot = radial_p_hagg_bellenguez_ivw_apoeomit, units = 'in', height = 4, width = 9)
+
+ggsave('results/Outliers_Plots_All/mr_radial_IVW_set1_apoeomit.png', plot = outlier_plots_set1_apoeomit, units = 'in', height = 4, width = 9)
+
+ggsave('results/Outliers_Plots_All/mr_radial_IVW_set2_apoeomit.png', plot = outlier_plots_set2_apoeomit, units = 'in', height = 4, width = 9)
+
+```
+
+
+
+
+## Combining Radial data and harmonized with APOE regions removed.
+(Brian, change the left join dataset from AD_radial_ivw_mtDNAcn_chong_kunkle to
+data to AD_radial_ivw_mtDNAcn_chong_kunkle_apoeomit$data)
+note it says apoe omit, change the name of the radial with apoe removed to that.
+
+Also change mtDNAcn_AD_Harm_chong_kunkle to dataset with the apoe regions removed
+
+``` {r radial_combination}
+
+# This step creates a new dataset combining our radial data with our harmonized
+# data, creating a dichotomous variable (Columns) of "outlier",
+# so when conducting  MR on this dataset, omission of outlier 
+# SNPS that may violate MR assumptions is possible.
+
+# chong_kunkle
+
+mtDNAcn_AD_Harm_Outlier_chong_kunkle_apoeomit <- mtDNAcn_AD_Harm_chong_kunkle_apoeomit %>%
+  left_join(AD_radial_ivw_mtDNAcn_chong_kunkle_apoeomit$data) %>%
+  mutate( gws.outcome = ifelse(pval.outcome <5e-8, TRUE, FALSE),
+    mr_keep = ifelse(mr_keep == FALSE | Outliers == "Outlier" | gws.outcome == TRUE, FALSE, TRUE)
+  )
+
+
+# longchamps_kunkle
+
+mtDNAcn_AD_Harm_Outlier_longchamps_kunkle_apoeomit <- mtDNAcn_AD_Harm_longchamps_kunkle_apoeomit %>%
+  left_join(AD_radial_ivw_mtDNAcn_longchamps_kunkle_apoeomit$data) %>%
+  mutate( gws.outcome = ifelse(pval.outcome <5e-8, TRUE, FALSE),
+    mr_keep = ifelse(mr_keep == FALSE | Outliers == "Outlier" | gws.outcome == TRUE, FALSE, TRUE)
+  )
+
+# hagg_kunkle
+
+mtDNAcn_AD_Harm_Outlier_hagg_kunkle_apoeomit <- mtDNAcn_AD_Harm_hagg_kunkle_apoeomit %>%
+  left_join(AD_radial_ivw_mtDNAcn_hagg_kunkle_apoeomit$data) %>%
+  mutate( gws.outcome = ifelse(pval.outcome <5e-8, TRUE, FALSE),
+    mr_keep = ifelse(mr_keep == FALSE | Outliers == "Outlier" | gws.outcome == TRUE, FALSE, TRUE)
+  )
+
+
+# chong_bellenguez
+
+mtDNAcn_AD_Harm_Outlier_chong_bellenguez_apoeomit <- mtDNAcn_AD_Harm_chong_bellenguez_apoeomit %>%
+  left_join(AD_radial_ivw_mtDNAcn_chong_bellenguez_apoeomit$data) %>%
+  mutate( gws.outcome = ifelse(pval.outcome <5e-8, TRUE, FALSE),
+    mr_keep = ifelse(mr_keep == FALSE | Outliers == "Outlier" | gws.outcome == TRUE, FALSE, TRUE)
+  )
+
+# longchamps_bellenguez
+
+mtDNAcn_AD_Harm_Outlier_longchamps_bellenguez_apoeomit <- mtDNAcn_AD_Harm_longchamps_bellenguez_apoeomit %>%
+  left_join(AD_radial_ivw_mtDNAcn_longchamps_bellenguez_apoeomit$data) %>%
+  mutate( gws.outcome = ifelse(pval.outcome <5e-8, TRUE, FALSE),
+    mr_keep = ifelse(mr_keep == FALSE | Outliers == "Outlier" | gws.outcome == TRUE, FALSE, TRUE)
+  )
+
+# hagg_bellenguez
+
+mtDNAcn_AD_Harm_Outlier_hagg_bellenguez_apoeomit <- mtDNAcn_AD_Harm_hagg_bellenguez_apoeomit %>%
+  left_join(AD_radial_ivw_mtDNAcn_hagg_bellenguez_apoeomit$data) %>%
+  mutate( gws.outcome = ifelse(pval.outcome <5e-8, TRUE, FALSE),
+    mr_keep = ifelse(mr_keep == FALSE | Outliers == "Outlier" | gws.outcome == TRUE, FALSE, TRUE)
+  )
+
+```
+
+
+
+# Appending Step apoe
+
+``` {r append_all_data}
+
+mtDNAcn_AD_harm_appended_apoe <- bind_rows(mtDNAcn_AD_Harm_Outlier_chong_kunkle_apoeomit, mtDNAcn_AD_Harm_Outlier_longchamps_kunkle_apoeomit, mtDNAcn_AD_Harm_Outlier_hagg_kunkle_apoeomit, mtDNAcn_AD_Harm_Outlier_chong_bellenguez_apoeomit, mtDNAcn_AD_Harm_Outlier_longchamps_bellenguez_apoeomit, mtDNAcn_AD_Harm_Outlier_hagg_bellenguez_apoeomit)
+
+
+view(mtDNAcn_AD_harm_appended_apoe)
+
+```
 
 ```{r export_harmonized_data}
 write_csv(mtDNAcn_AD_harm_appended_apoe, 'data/Harmonized_Datasets/harmonized_data_appended_apoe_omit.csv')
@@ -1356,77 +1956,373 @@ Mr_Horizontal_Test_apoe <- mr_pleiotropy_test(mtDNAcn_AD_harm_appended_apoe)
 
 View(Mr_Horizontal_Test_apoe)
 
-# Directional test (testing whether Exposure >Outcome direction is true casual direction)
 
 
-#This may no longer be necessary
-AD_direction_apoe <- directionality_test(Mr_mtDNAcn_AD_appended_apoe)
 
-View(AD_direction_apoe)
+
 
 ```
 
 
-## Apoe removed Plots
-``` {r Preliminary_plots}
+##  Plots MR APOE region removed.
+Using seperate datasets to generate plots for each exposure outcome pair.
 
-MrAD_single_mtDNAcn_apoe <- mr_singlesnp(mtDNAcn_AD_harm_appended_apoe)
+``` {r plots_}
+# Chong_kunkle Preparation
 
-MrAD_loo_mtDNAcn_apoe <- mr_leaveoneout(mtDNAcn_AD_harm_appended_apoe)
+MrAD_single_mtDNAcn_apoeomit_c_k <- mr_singlesnp(mtDNAcn_AD_Harm_Outlier_chong_kunkle_apoeomit)
 
-# Generates Plots of single and leave one out anlysis MR.
+MrAD_loo_mtDNAcn_apoeomit_c_k <- mr_leaveoneout(mtDNAcn_AD_Harm_Outlier_chong_kunkle_apoeomit)
 
-p1_apoe_Single <- mr_forest_plot(MrAD_single_mtDNAcn_apoe )
-p1_apoe_Single [[1]]
+#longchamps_kunkle Preparation
 
-P2_apoe_Funnel_single <- mr_funnel_plot(MrAD_single_mtDNAcn_apoe)
-P2_apoe_Funnel_single[[1]]
+MrAD_single_mtDNAcn_apoeomit_l_k <- mr_singlesnp(mtDNAcn_AD_Harm_Outlier_longchamps_kunkle_apoeomit)
 
-p3_apoe_loo <- mr_leaveoneout_plot(MrAD_loo_mtDNAcn_apoe)
-p3_apoe_loo[[1]]
+MrAD_loo_mtDNAcn_apoeomit_l_k <- mr_leaveoneout(mtDNAcn_AD_Harm_Outlier_longchamps_kunkle_apoeomit)
 
-# To plot preliminary MR analysis scatter plot, must rerun and rename.
 
-MR_scatter_mtDNAcn_ad_apoe <- mr(mtDNAcn_AD_harm_appended_apoe)
+# hagg_kunkle Preparation
 
-p4_apoe_scatter <- mr_scatter_plot(MR_scatter_mtDNAcn_ad_apoe, mtDNAcn_AD_harm_appended_apoe)
+MrAD_single_mtDNAcn_apoeomit_h_k <- mr_singlesnp(mtDNAcn_AD_Harm_Outlier_hagg_kunkle_apoeomit)
 
-p4_scatter_apoe_format <- p4_apoe_scatter[[1]] + theme_bw() + 
+MrAD_loo_mtDNAcn_apoeomit_h_k <- mr_leaveoneout(mtDNAcn_AD_Harm_Outlier_hagg_kunkle_apoeomit)
+
+# chong_bellenguez Preparation
+MrAD_single_mtDNAcn_apoeomit_c_b <- mr_singlesnp(mtDNAcn_AD_Harm_Outlier_chong_bellenguez_apoeomit)
+
+MrAD_loo_mtDNAcn_apoeomit_c_b <- mr_leaveoneout(mtDNAcn_AD_Harm_Outlier_chong_bellenguez_apoeomit)
+
+# longchamps_bellenguez Preparation
+
+MrAD_single_mtDNAcn_apoeomit_l_b <- mr_singlesnp(mtDNAcn_AD_Harm_Outlier_longchamps_bellenguez_apoeomit)
+
+MrAD_loo_mtDNAcn_apoeomit_l_b <- mr_leaveoneout(mtDNAcn_AD_Harm_Outlier_longchamps_bellenguez_apoeomit)
+
+# hagg_bellenguez Preparation
+
+MrAD_single_mtDNAcn_apoeomit_h_b <- mr_singlesnp(mtDNAcn_AD_Harm_Outlier_hagg_bellenguez_apoeomit)
+
+MrAD_loo_mtDNAcn_apoeomit_h_b <- mr_leaveoneout(mtDNAcn_AD_Harm_Outlier_hagg_bellenguez_apoeomit)
+
+# Generates Plots of single and leave one out anlysis MR
+
+# Chong_kunkle Plots
+
+
+p1_apoeomit_Single_c_k <- mr_forest_plot(MrAD_single_mtDNAcn_apoeomit_c_k )
+p1_apoeomit_Single_c_k [[1]]
+
+P2_apoeomit_Funnel_single_c_k <- mr_funnel_plot(MrAD_single_mtDNAcn_apoeomit_c_k)
+P2_apoeomit_Funnel_single_c_k[[1]]
+
+p3_apoeomit_loo_c_k <- mr_leaveoneout_plot(MrAD_loo_mtDNAcn_apoeomit_c_k)
+p3_apoeomit_loo_c_k[[1]]
+
+
+# Note, indivdual MR must be run in this step to create the plot
+
+MR_scatter_mtDNAcn_ad <- mr(mtDNAcn_AD_Harm_Outlier_chong_kunkle_apoeomit)
+
+p4_Prime_scatter_apoeomit <- mr_scatter_plot(MR_scatter_mtDNAcn_ad, mtDNAcn_AD_Harm_Outlier_chong_kunkle_apoeomit)
+
+p4_scatter_apoeomit_format_c_k <- p4_Prime_scatter_apoeomit[[1]] + theme_bw() + 
   guides(color=guide_legend(ncol =1)) + 
   theme(
     text = element_text(size = 8), 
   )
-p4_scatter_apoe_format
+p4_scatter_apoeomit_format_c_k
+
+
+# longchamps_kunkle Plots
+
+p1_apoeomit_Single_l_k <- mr_forest_plot(MrAD_single_mtDNAcn_apoeomit_l_k )
+p1_apoeomit_Single_l_k [[1]]
+
+P2_apoeomit_Funnel_single_l_k <- mr_funnel_plot(MrAD_single_mtDNAcn_apoeomit_l_k)
+P2_apoeomit_Funnel_single_l_k[[1]]
+
+p3_apoeomit_loo_l_k <- mr_leaveoneout_plot(MrAD_loo_mtDNAcn_apoeomit_l_k)
+p3_apoeomit_loo_l_k[[1]]
+
+
+MR_scatter_mtDNAcn_ad <- mr(mtDNAcn_AD_Harm_Outlier_longchamps_kunkle_apoeomit)
+
+p4_apoeomit_scatter <- mr_scatter_plot(MR_scatter_mtDNAcn_ad, mtDNAcn_AD_Harm_Outlier_longchamps_kunkle_apoeomit)
+
+p4_scatter_apoeomit_format_l_k <- p4_apoeomit_scatter[[1]] + theme_bw() + 
+  guides(color=guide_legend(ncol =1)) + 
+  theme(
+    text = element_text(size = 8), 
+  )
+p4_scatter_apoeomit_format_l_k
+
+
+# hagg_kunkle Plots
+
+p1_apoeomit_Single_h_k <- mr_forest_plot(MrAD_single_mtDNAcn_apoeomit_h_k )
+p1_apoeomit_Single_h_k [[1]]
+
+P2_apoeomit_Funnel_single_h_k <- mr_funnel_plot(MrAD_single_mtDNAcn_apoeomit_h_k)
+P2_apoeomit_Funnel_single_h_k[[1]]
+
+p3_apoeomit_loo_h_k <- mr_leaveoneout_plot(MrAD_loo_mtDNAcn_apoeomit_h_k)
+p3_apoeomit_loo_h_k[[1]]
+
+
+MR_scatter_mtDNAcn_ad <- mr(mtDNAcn_AD_Harm_Outlier_hagg_kunkle_apoeomit)
+
+p4_apoeomit_scatter <- mr_scatter_plot(MR_scatter_mtDNAcn_ad, mtDNAcn_AD_Harm_Outlier_hagg_kunkle_apoeomit)
+
+p4_scatter_apoeomit_format_h_k <- p4_apoeomit_scatter[[1]] + theme_bw() + 
+  guides(color=guide_legend(ncol =1)) + 
+  theme(
+    text = element_text(size = 8), 
+  )
+p4_scatter_apoeomit_format_h_k
+
+# Chong_bellenguez Plots
+
+p1_apoeomit_Single_c_b <- mr_forest_plot(MrAD_single_mtDNAcn_apoeomit_c_b )
+p1_apoeomit_Single_c_b [[1]]
+
+P2_apoeomit_Funnel_single_c_b <- mr_funnel_plot(MrAD_single_mtDNAcn_apoeomit_c_b)
+P2_apoeomit_Funnel_single_c_b[[1]]
+
+p3_apoeomit_loo_c_b <- mr_leaveoneout_plot(MrAD_loo_mtDNAcn_apoeomit_c_b)
+p3_apoeomit_loo_c_b[[1]]
+
+MR_scatter_mtDNAcn_ad <- mr(mtDNAcn_AD_Harm_Outlier_chong_bellenguez_apoeomit)
+
+p4_Prime_scatter <- mr_scatter_plot(MR_scatter_mtDNAcn_ad, mtDNAcn_AD_Harm_Outlier_chong_bellenguez_apoeomit)
+
+p4_scatter_apoeomit_format_c_b <- p4_Prime_scatter[[1]] + theme_bw() + 
+  guides(color=guide_legend(ncol =1)) + 
+  theme(
+    text = element_text(size = 8), 
+  )
+p4_scatter_apoeomit_format_c_b
+
+# longchamps_bellenguez Plots
+
+p1_apoeomit_Single_l_b <- mr_forest_plot(MrAD_single_mtDNAcn_apoeomit_l_b )
+p1_apoeomit_Single_l_b [[1]]
+
+P2_apoeomit_Funnel_single_l_b <- mr_funnel_plot(MrAD_single_mtDNAcn_apoeomit_l_b)
+P2_apoeomit_Funnel_single_l_b[[1]]
+
+p3_apoeomit_loo_l_b <- mr_leaveoneout_plot(MrAD_loo_mtDNAcn_apoeomit_l_b)
+p3_apoeomit_loo_l_b[[1]]
+
+
+MR_scatter_mtDNAcn_ad <- mr(mtDNAcn_AD_Harm_Outlier_longchamps_bellenguez_apoeomit)
+
+p4_apoeomit_scatter <- mr_scatter_plot(MR_scatter_mtDNAcn_ad, mtDNAcn_AD_Harm_Outlier_longchamps_bellenguez_apoeomit)
+
+p4_scatter_apoeomit_format_l_b <- p4_apoeomit_scatter[[1]] + theme_bw() + 
+  guides(color=guide_legend(ncol =1)) + 
+  theme(
+    text = element_text(size = 8), 
+  )
+p4_scatter_apoeomit_format_l_b
+
+# hagg_bellenguez Plots
+
+p1_apoeomit_Single_h_b <- mr_forest_plot(MrAD_single_mtDNAcn_apoeomit_h_b )
+p1_apoeomit_Single_h_b [[1]]
+
+P2_apoeomit_Funnel_single_h_b <- mr_funnel_plot(MrAD_single_mtDNAcn_apoeomit_h_b)
+P2_apoeomit_Funnel_single_h_b[[1]]
+
+p3_apoeomit_loo_h_b <- mr_leaveoneout_plot(MrAD_loo_mtDNAcn_apoeomit_h_b)
+p3_apoeomit_loo_h_b[[1]]
+
+
+MR_scatter_mtDNAcn_ad <- mr(mtDNAcn_AD_Harm_Outlier_hagg_bellenguez_apoeomit)
+
+p4_apoeomit_scatter <- mr_scatter_plot(MR_scatter_mtDNAcn_ad, mtDNAcn_AD_Harm_Outlier_hagg_bellenguez_apoeomit)
+
+p4_scatter_apoeomit_format_h_b <- p4_apoeomit_scatter[[1]] + theme_bw() + 
+  guides(color=guide_legend(ncol =1)) + 
+  theme(
+    text = element_text(size = 8), 
+  )
+p4_scatter_apoeomit_format_h_b
+
+
 
 ```
 
 
-## Export apoe removed MR Results
 
-```{r preliminary_results}
-# MR Analysis
-write_csv(Mr_mtDNAcn_AD_appended_apoe_OR , 'results/MR_Results_all datasets/MR_apoe_omit.csv')
+``` {r combine_plots}
+# Combines some plots onto one page.
 
-# Sensitivity Tests
+leaveone_combine <- list(p3_Prime_loo_c_k, p3_Prime_loo_l_k, p3_Prime_loo_h_k, p3_Prime_loo_c_b, p3_Prime_loo_l_b, p3_Prime_loo_h_b)
 
-write_csv(Mr_H_Test_apoe , 'results/Sensitivity_Tests_all_datasets/mr_het_res_apoe_omit.csv')
-write_csv(Mr_Horizontal_Test_apoe , 'results/Sensitivity_Tests_all_datasets/mr_hor_plt_res_apoe_omit.csv')
+leaveone_combine = lapply(leaveone_combine, ggplotGrob)
+
+leaveoneout_plots_set<- grid.arrange(leaveone_combine,
+nrow = 2 ,
+top = "Leave_one_out_plots"
+) 
 
 
-#Code for directional effects may be removed (i did not run this code)
-write_csv(AD_direction_Prime_mtDNAcn_chong , 'results/Sensitivity_Tests_Chong/Directional_Chong_Prime.csv')
 
-# Plots
+p1_Prime_Single_c_k<- as_grob(p1_Prime_Single_c_k, device = NULL)
 
-ggsave('results/Plots_all_data/mr_single_Forest_apoe_omit.png', plot = p1_apoe_Single [[1]], units = 'in', height = 4, width = 9)
+boxC <- list(box1,box2)
+```
+```
+## Export Plots MR analsis
 
-ggsave('results/Plots_all_data/mr_funnel_Single_apoe_omit.png', plot = P2_apoe_Funnel_single[[1]], units = 'in', height = 4, width = 9)
-ggsave('results/Plots_all_data/mr_forest_loo_apoe_omit.png', plot =p3_apoe_loo[[1]] + theme(text = element_text(size = 8)), units = 'in', height = 9, width = 9)
-ggsave('results/Plots_all_data/mr_scatter_apoe_omit.png', plot = p4_scatter_apoe_format, units = 'in', height = 4, width = 9)
+
+``` {r export_dataset_pairs}
+# Plots for individual dataset pairs
+# Single SNP plots
+
+ggsave('Casual_Estimate_mtDNAcn_on_Alzheimer/results/Plots_all_data/mr_single_Forest_apoeomit_c_k.png', plot = p1_apoeomit_Single_c_k [[1]], units = 'in', height = 4, width = 9)
+
+ggsave('Casual_Estimate_mtDNAcn_on_Alzheimer/results/Plots_all_data/mr_single_Forest_apoeomit_l_k.png', plot = p1_apoeomit_Single_l_k [[1]], units = 'in', height = 4, width = 9)
+
+
+ggsave('Casual_Estimate_mtDNAcn_on_Alzheimer/results/Plots_all_data/mr_single_Forest_apoeomit_h_k.png', plot = p1_apoeomit_Single_h_k [[1]], units = 'in', height = 4, width = 9)
+
+
+ggsave('Casual_Estimate_mtDNAcn_on_Alzheimer/results/Plots_all_data/mr_single_Forest_apoeomit_c_b.png', plot = p1_apoeomit_Single_c_b [[1]], units = 'in', height = 4, width = 9)
+
+
+ggsave('Casual_Estimate_mtDNAcn_on_Alzheimer/results/Plots_all_data/mr_single_Forest_apoeomit_l_b.png', plot = p1_apoeomit_Single_l_b [[1]], units = 'in', height = 4, width = 9)
+
+
+ggsave('Casual_Estimate_mtDNAcn_on_Alzheimer/results/Plots_all_data/mr_single_Forest_apoeomit_h_b.png', plot = p1_apoeomit_Single_h_b [[1]], units = 'in', height = 4, width = 9)
+
+
+
+
+# Plots Leave one out for individual dataset pairs.
+
+ggsave('Casual_Estimate_mtDNAcn_on_Alzheimer/results/Plots_all_data/mr_forest_loo_apoeomit_c_k.png', plot =p3_apoeomit_loo_c_k[[1]] + theme(text = element_text(size = 8)), units = 'in', height = 9, width = 9)
+
+
+ggsave('Casual_Estimate_mtDNAcn_on_Alzheimer/results/Plots_all_data/mr_forest_loo_apoeomit_l_k.png', plot =p3_apoeomit_loo_l_k[[1]] + theme(text = element_text(size = 8)), units = 'in', height = 9, width = 9)
+
+
+ggsave('Casual_Estimate_mtDNAcn_on_Alzheimer/results/Plots_all_data/mr_forest_loo_apoeomit_h_k.png', plot =p3_apoeomit_loo_h_k[[1]] + theme(text = element_text(size = 8)), units = 'in', height = 9, width = 9)
+
+
+
+ggsave('Casual_Estimate_mtDNAcn_on_Alzheimer/results/Plots_all_data/mr_forest_loo_apoeomit_c_b.png', plot =p3_apoeomit_loo_c_b[[1]] + theme(text = element_text(size = 8)), units = 'in', height = 9, width = 9)
+
+
+ggsave('results/Plots_all_data/mr_forest_loo_apoeomit_l_b.png', plot =p3_apoeomit_loo_l_b[[1]] + theme(text = element_text(size = 8)), units = 'in', height = 9, width = 9)
+
+
+ggsave('Casual_Estimate_mtDNAcn_on_Alzheimer/results/Plots_all_data/mr_forest_loo_apoeomit_h_b.png', plot =p3_apoeomit_loo_h_b[[1]] + theme(text = element_text(size = 8)), units = 'in', height = 9, width = 9)
+
+# Funnel plots for dataset pairs
+
+ggsave('Casual_Estimate_mtDNAcn_on_Alzheimer/results/Plots_all_data/mr_funnel_Single_apoeomit_c_k.png', plot = P2_apoeomit_Funnel_single_c_k[[1]], units = 'in', height = 4, width = 9)
+
+
+ggsave('Casual_Estimate_mtDNAcn_on_Alzheimer/results/Plots_all_data/mr_funnel_Single_apoeomit_l_k.png', plot = P2_apoeomit_Funnel_single_l_k[[1]], units = 'in', height = 4, width = 9)
+
+ggsave('Casual_Estimate_mtDNAcn_on_Alzheimer/results/Plots_all_data/mr_funnel_Single_apoeomit_h_k.png', plot = P2_apoeomit_Funnel_single_h_k[[1]], units = 'in', height = 4, width = 9)
+
+ggsave('Casual_Estimate_mtDNAcn_on_Alzheimer/results/Plots_all_data/mr_funnel_Single_apoeomit_c_b.png', plot = P2_apoeomit_Funnel_single_c_b[[1]], units = 'in', height = 4, width = 9)
+
+
+ggsave('Casual_Estimate_mtDNAcn_on_Alzheimer/results/Plots_all_data/mr_funnel_Single_apoeomit_l_b.png', plot = P2_apoeomit_Funnel_single_l_b[[1]], units = 'in', height = 4, width = 9)
+
+
+ggsave('Casual_Estimate_mtDNAcn_on_Alzheimer/results/Plots_all_data/mr_funnel_Single_apoeomit_h_b.png', plot = P2_apoeomit_Funnel_single_h_b[[1]], units = 'in', height = 4, width = 9)
+
+# Plots Scatter for dataset pairs
+
+
+ggsave('Casual_Estimate_mtDNAcn_on_Alzheimer/results/Plots_all_data/mr_scatter_apoeomit_c_k.png', plot = p4_scatter_apoeomit_format_c_k, units = 'in', height = 4, width = 9)
+
+
+ggsave('Casual_Estimate_mtDNAcn_on_Alzheimer/results/Plots_all_data/mr_scatter_apoeomit_l_k.png', plot = p4_scatter_apoeomit_format_l_k, units = 'in', height = 4, width = 9)
+
+ggsave('Casual_Estimate_mtDNAcn_on_Alzheimer/results/Plots_all_data/mr_scatter_apoeomit_h_k.png', plot = p4_scatter_apoeomit_format_h_k, units = 'in', height = 4, width = 9)
+
+ggsave('Casual_Estimate_mtDNAcn_on_Alzheimer/results/Plots_all_data/mr_scatter_apoeomit_c_b.png', plot = p4_scatter_apoeomit_format_c_b, units = 'in', height = 4, width = 9)
+
+
+ggsave('Casual_Estimate_mtDNAcn_on_Alzheimer/results/Plots_all_data/mr_scatter_apoeomit_l_b.png', plot = p4_scatter_apoeomit_format_l_b, units = 'in', height = 4, width = 9)
+
+
+ggsave('Casual_Estimate_mtDNAcn_on_Alzheimer/results/Plots_all_data/mr_scatter_apoeomit_h_b.png', plot = p4_scatter_apoeomit_format_h_b, units = 'in', height = 4, width = 9)
+
+
 
 ```
 
 
 
 
+
+
+
+
+
+## MR Metaanalysis Forest Plots
+
+
+# 6 Pairs of MR: Forest Plot
+```` {r apoe_retained} 
+
+Mr_mtDNAcn_AD_appended_Prime_OR <- MR_Prime
+
+
+
+MR_retained_forest_mod <- ggplot(data=Mr_mtDNAcn_AD_appended_Prime_OR, aes(x=method, y=or, ymin=or_lci95, ymax=or_uci95)) +
+   facet_grid(cols = vars(outcome), rows = vars(exposure)) + 
+geom_point(shape = 15, size = 2) +
+geom_pointrange()+ 
+  geom_hline(yintercept=1, lty=2, size =1) +  
+  geom_errorbar(aes(ymin=or_lci95, ymax=or_uci95), width=0.5, cex=1)+ 
+  coord_flip() + 
+  geom_point(shape = 15, size = 2) +
+  ggtitle("OR of AD by exposure/outcome pair:APOE Keep.") +
+  xlab("Method")  +
+  ylab("Odds Ratio AD due to mtDNAcn  (95% CI)")  
+  
+
+MR_retained_forest_mod
+
+
+```
+
+
+``` {r apoe_removed}
+
+Mr_mtDNAcn_AD_appended_apoe_OR <- MR_apoe_omit
+
+  
+MR_apoe_omit_forest_plot_mod <- ggplot(data=Mr_mtDNAcn_AD_appended_apoe_OR, aes(x=method, y=or, ymin=or_lci95, ymax=or_uci95)) +
+  facet_grid(cols = vars(outcome), rows = vars(exposure)) + 
+geom_point(shape = 15, size = 2) +
+geom_pointrange()+ 
+  geom_hline(yintercept=1, lty=2, size =1) +  
+  geom_errorbar(aes(ymin=or_lci95, ymax=or_uci95), width=0.5, cex=1)+ 
+  coord_flip() + 
+  geom_point(shape = 15, size = 2) +
+  ggtitle("OR of AD by exposure/outcome pair:APOE Omit.") +
+  xlab("Method")  +
+  ylab("Odds Ratio AD due to mtDNAcn  (95% CI)") 
+  
+ MR_apoe_omit_forest_plot_mod
+  
+```
+
+# Export forest plots of MR
+
+``` {r forest_plots_combine_export}
+
+ggsave('Casual_Estimate_mtDNAcn_on_Alzheimer/results/MR_Results_all_datasets/mr_retain_forestplot_all.png', plot = MR_retained_forest_mod)
+
+ggsave('Casual_Estimate_mtDNAcn_on_Alzheimer/results/MR_Results_all_datasets/mr_omit_forestplot_all.png', plot = MR_apoe_omit_forest_plot_mod)
+
+```
 

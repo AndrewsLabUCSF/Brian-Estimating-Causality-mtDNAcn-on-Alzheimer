@@ -1,13 +1,13 @@
 id.exposure,id.outcome,outcome,exposure,method,Q,Q_df,Q_pval
-2hVH7v,c1x4B5,outcome,mtDNAcn__all,MR Egger,85.05718381449198,60,0.018380060565914354
-2hVH7v,c1x4B5,outcome,mtDNAcn__all,Inverse variance weighted,85.14843870398137,61,0.022273593087739334
-2hVH7v,Gi1ahr,outcome,mtDNAcn__all,MR Egger,88.09279743623799,57,0.0051479158913207805
-2hVH7v,Gi1ahr,outcome,mtDNAcn__all,Inverse variance weighted,88.09747588920905,58,0.006587248494387533
-jsilRi,c1x4B5,outcome,mtDNAcn,MR Egger,119.01993582295007,87,0.012876620539197291
-jsilRi,c1x4B5,outcome,mtDNAcn,Inverse variance weighted,119.82692528115058,88,0.013633002444962471
-jsilRi,Gi1ahr,outcome,mtDNAcn,MR Egger,45.4367877036377,26,0.01053672519093713
-jsilRi,Gi1ahr,outcome,mtDNAcn,Inverse variance weighted,45.726320747161,27,0.013613158252409803
-vlPoJB,c1x4B5,outcome,mtDNAcn,MR Egger,61.009133277113854,46,0.06824751929819291
-vlPoJB,c1x4B5,outcome,mtDNAcn,Inverse variance weighted,62.20425282092342,47,0.0677996602559354
-vlPoJB,Gi1ahr,outcome,mtDNAcn,MR Egger,76.79622716758256,45,0.0021878160544776307
-vlPoJB,Gi1ahr,outcome,mtDNAcn,Inverse variance weighted,77.17511923229891,46,0.002704218227617758
+axg0Pw,nq9o2u,AD_kunkle,mtDNA_longchamps,MR Egger,119.01993582295007,87,0.012876620539197291
+axg0Pw,nq9o2u,AD_kunkle,mtDNA_longchamps,Inverse variance weighted,119.82692528115058,88,0.013633002444962471
+axg0Pw,uGs85Z,AD_bellenguez,mtDNA_longchamps,MR Egger,153.66006541779888,86,1.0187129846510213e-5
+axg0Pw,uGs85Z,AD_bellenguez,mtDNA_longchamps,Inverse variance weighted,155.69021644098538,87,8.635747671126398e-6
+Cs6jVC,nq9o2u,AD_kunkle,mtDNA_chong,MR Egger,85.05718381449198,60,0.018380060565914354
+Cs6jVC,nq9o2u,AD_kunkle,mtDNA_chong,Inverse variance weighted,85.14843870398137,61,0.022273593087739334
+Cs6jVC,uGs85Z,AD_bellenguez,mtDNA_chong,MR Egger,88.09279743623799,57,0.0051479158913207805
+Cs6jVC,uGs85Z,AD_bellenguez,mtDNA_chong,Inverse variance weighted,88.09747588920905,58,0.006587248494387533
+H6dajN,nq9o2u,AD_kunkle,mtDNA_hagg,MR Egger,61.009133277113854,46,0.06824751929819291
+H6dajN,nq9o2u,AD_kunkle,mtDNA_hagg,Inverse variance weighted,62.20425282092342,47,0.0677996602559354
+H6dajN,uGs85Z,AD_bellenguez,mtDNA_hagg,MR Egger,76.79622716758256,45,0.0021878160544776307
+H6dajN,uGs85Z,AD_bellenguez,mtDNA_hagg,Inverse variance weighted,77.17511923229891,46,0.002704218227617758

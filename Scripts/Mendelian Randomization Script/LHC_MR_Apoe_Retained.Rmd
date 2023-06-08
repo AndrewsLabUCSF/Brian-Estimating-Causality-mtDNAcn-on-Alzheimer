@@ -276,3 +276,120 @@ view(res_Hagg_Bellenguez_apoe_keep)
 
 
 ```
+
+
+## MR Metaanalysis Forest Plots (Direction X > Y and Y > X)
+
+
+``` {r apoe_retained_meta_plot}
+#Creating new data frame based on LHC MR results(Syntax of LHCMR results are
+# Row1:betas/logodds, row2:se, row3:pvalue)
+View(res_Chong_Bellenguez_apoe_keep)
+
+View(res_longchamps_Bellenguez_apoe_keep)
+
+View(res_Hagg_Bellenguez_apoe_keep)
+
+
+
+#All directions plot
+LHCMR_forest_apoe_retained <- tribble(
+  ~b, ~se, ~p_value, ~dataset, ~Causal_direction, ~Confounder_b, ~Confounder_se, ~Confounder_pvalue,
+  #--|--|----
+  -0.1491353478, 0.0401874573, 0.0002064483, "chong_bellenguez", "mtDNAcn_on_AD", 0.0380383071345852, 0.0356310738840191, 0.285719061674953,
+  -0.119665361, 0.039613043, 0.002520599, "longchamps_bellenguez", "mtDNAcn_on_AD", 0.0546213305081152, 0.0212159018568707, 0.0100371530246619,
+  -0.177190168, 0.046492839, 0.000138334, "hagg_bellenguez", "mtDNAcn_on_AD", 0.0607057052810219, 0.0266184509401698, 0.0225728703440708,
+  -0.2158746, 0.1546882, 0.1628510, "chong_bellenguez", "AD_on_mtDNAcn", -0.0174210373637058, 0.0193203848631664, 0.367220479245281,
+  0.10030595, 0.04202045, 0.01698305, "longchamps_bellenguez", "AD_on_mtDNAcn", -0.0417350712782942, 0.0148584429491179, 0.00497194939871816,
+  -0.16904110, 0.07184439, 0.01862874, "hagg_bellenguez", "AD_on_mtDNAcn", 0.0348667965451145, 0.064533186176989, 0.588995329271463,
+)
+
+
+view(LHCMR_forest_apoe_retained)
+
+LHC_OR_apoe_retained <- generate_odds_ratios(LHCMR_forest_apoe_retained)
+
+view(LHC_OR_apoe_retained)
+
+
+LHCMR_retained_forest_mod <- ggplot(data=LHC_OR_apoe_retained, aes(x=dataset, y=or, ymin=or_lci95, ymax=or_uci95)) +
+   facet_grid(cols = vars(Causal_direction)) + 
+geom_point(shape = 15, size = 2) +
+geom_pointrange()+ 
+  geom_hline(yintercept=1, lty=2, size =1) +  
+  geom_errorbar(aes(ymin=or_lci95, ymax=or_uci95), width=0.5, cex=1)+ 
+  coord_flip() + 
+  geom_point(shape = 15, size = 2) +
+  ggtitle("Apoe retained LHC_MR Odds ratio by causal direction.") +
+  xlab("Method")  +
+  ylab("Odds Ratio AD due to mtDNAcn  (95% CI)")  
+  
+
+LHCMR_retained_forest_mod
+
+# Forward direction plot only (Reverse direction is binary exposure on continous outcome, not a odds ratio)
+  LHCMR_forest_apoe_retained_mtDNA_on_AD <- tribble(
+  ~b, ~se, ~p_value, ~dataset, ~Causal_direction, ~Confounder_b, ~Confounder_se, ~Confounder_pvalue,
+  #--|--|----
+  -0.1491353478, 0.0401874573, 0.0002064483, "Chong", "mtDNAcn_on_AD", 0.0380383071345852, 0.0356310738840191, 0.285719061674953,
+  -0.119665361, 0.039613043, 0.002520599, "Longchamps", "mtDNAcn_on_AD", 0.0546213305081152, 0.0212159018568707, 0.0100371530246619,
+  -0.177190168, 0.046492839, 0.000138334, "Hagg", "mtDNAcn_on_AD", 0.0607057052810219, 0.0266184509401698, 0.0225728703440708,
+  )
+ 
+LHC_OR_apoe_retained_mtDNA_on_AD <- generate_odds_ratios(LHCMR_forest_apoe_retained_mtDNA_on_AD)
+
+view(LHC_OR_apoe_retained_mtDNA_on_AD)
+  
+LHCMR_retained_forest_mod_mtDNA_on_AD <- ggplot(data=LHC_OR_apoe_retained_mtDNA_on_AD, aes(x=dataset, y=or, ymin=or_lci95, ymax=or_uci95)) +
+   facet_grid(cols = vars(Causal_direction)) + 
+geom_point(shape = 15, size = 2) +
+geom_pointrange()+ 
+  geom_hline(yintercept=1, lty=2, size =1) +  
+  geom_errorbar(aes(ymin=or_lci95, ymax=or_uci95), width=0.5, cex=1)+ 
+  coord_flip() + 
+  geom_point(shape = 15, size = 2) +
+  ggtitle("Apoe retained LHC_MR Odds ratio.") +
+  xlab("Method")  +
+  ylab("Odds Ratio AD due to mtDNAcn  (95% CI)")  
+
+
+LHCMR_retained_forest_mod_mtDNA_on_AD
+
+
+# CI Plot for reverse causal direction, new table.
+
+LHCMR_forest_apoe_retained_AD_on_mtDNA <- tribble(
+  ~b, ~dataset, ~Causal_direction, ~lci95, ~uci95, 
+   #--|--|----
+  -0.2158746, "Chong", "AD_on_mtDNAcn", -0.493450543609413, 0.11292703786249,
+	 0.10030595, "Longchamps", "AD_on_mtDNAcn", 0.0182657460210728, 0.182985922017278,
+  -0.16904110, "Hagg", "AD_on_mtDNAcn", -0.310824818360584, -0.0291948016644565
+)
+
+LHCMR_apoe_retained_forest_mod_AD_on_mtDNA <- ggplot(data=LHCMR_forest_apoe_retained_AD_on_mtDNA, aes(x=dataset, y=b, ymin=lci95, ymax=uci95)) +
+   facet_grid(cols = vars(Causal_direction)) + 
+geom_point(shape = 15, size = 2) +
+geom_pointrange()+ 
+  geom_hline(yintercept=0, lty=2, size =1) +  
+  geom_errorbar(aes(ymin=lci95, ymax=uci95), width=0.5, cex=1)+ 
+  coord_flip() + 
+  geom_point(shape = 15, size = 2) +
+  ggtitle("Causal estimate of AD on mtDNAcn, APOE retained (95% CI).") +
+  xlab("Method")  +
+  ylab("Causal estimate of AD on mtDNAcn, APOE retained (95% CI).")  
+
+LHCMR_apoe_retained_forest_mod_AD_on_mtDNA
+
+```
+
+# Export forest plots of LHC_MR
+
+``` {r forest_plots_combine_export}
+
+ggsave('Casual_Estimate_mtDNAcn_on_Alzheimer/results/MR_Results_all_datasets/LHCmr_retain_forestplot.png', plot = LHCMR_retained_forest_mod)
+
+ggsave('results/MR_Results_all_datasets/LHCmr_retain_forestplot_mtDNA_on_AD.png', plot = LHCMR_retained_forest_mod_mtDNA_on_AD)
+
+ggsave('results/MR_Results_all_datasets/LHCmr_retain_forestplot_AD_on_mtDNA.png', plot = LHCMR_apoe_retained_forest_mod_AD_on_mtDNA)
+```
+
