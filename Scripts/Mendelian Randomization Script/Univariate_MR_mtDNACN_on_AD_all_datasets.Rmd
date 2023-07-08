@@ -93,9 +93,9 @@ exposure_path_chong = "Resources/Chong2022mtdnacn_eur.chrall.CPRA_b37.tsv.gz"
 Exposure_mtDNAcn_chong <- read_tsv(exposure_path_chong,comment="#")
 
 
-# To format the GWAS results for MR analysis Exposure. 
-
+# To format the GWAS results for MR analysis Exposure...
 # Rename right-side variables to match column names of your GWAS dataset 
+
 Format_mtDNAcn_chong <- Exposure_mtDNAcn_chong %>% format_data(.,
   type = "exposure",
   snps = NULL,
@@ -122,7 +122,7 @@ Format_mtDNAcn_chong <- Exposure_mtDNAcn_chong %>% format_data(.,
 )  %>%
   as_tibble()
 
-#Adds dataset name for identification in MR analysis
+# Adds dataset name for identification in MR analysis
 
 Format_mtDNAcn_chong <- Format_mtDNAcn_chong %>%
 mutate(exposure = "mtDNA_chong")
@@ -167,7 +167,7 @@ Format_mtDNAcn_longchamps <- Exposure_mtDNAcn_longchamps %>% format_data(.,
 )  %>%
   as_tibble()
 
-#Adds dataset name for identification in MR analysis
+# Adds dataset name for identification in MR analysis
 
 Format_mtDNAcn_longchamps <- Format_mtDNAcn_longchamps %>%
 mutate(exposure = "mtDNA_longchamps")
@@ -213,7 +213,7 @@ Format_mtDNAcn_hagg <- Exposure_mtDNAcn_hagg %>% format_data(.,
 )  %>%
   as_tibble()
 
-#Adds dataset name for identification in MR analysis
+# Adds dataset name for identification in MR analysis
 
 Format_mtDNAcn_hagg <- Format_mtDNAcn_hagg %>%
 mutate(exposure = "mtDNA_hagg")
@@ -255,7 +255,7 @@ outcome_AD_Format_bellenguez <- OutcomeAD_bellenguez %>%
 ) %>%
   as_tibble()
 
-#Adds dataset name for identification in MR analysis
+# Adds dataset name for identification in MR analysis
 
 outcome_AD_Format_bellenguez <- outcome_AD_Format_bellenguez %>%
 mutate(outcome = "AD_bellenguez")
@@ -314,9 +314,8 @@ computational speed improvements.
 ``` {r eval=FALSE}
 
 #Extract Instrumental variables from the exposure.
-# Note that the lower Clump
-#Clump R^2 is, the less linkage disequilibrium snps will
-#be included. 
+# Note that the lower Clump R^2 is, the more stringent, removes correlated 
+# snps and retains the SNP with the lowest p-value. 
 # Filter allows for more time efficient clumping, it 
 # filters all of the significant SNPS and leaves all non significant 
 # SNPs from the analysis.
@@ -381,14 +380,16 @@ mtDNAcn_clump_hagg_data <-  mtDNAcn_clump_hagg
 
 
 ## LD Proxies
-This attempts to retain any missing SNP's that are not both present in the 
-exposure and outcome dataset by utilizing LD proxies in their place. This step will 
+This attempts to retain any missing SNP's that are present in the 
+exposure but not the outcome GWAS by utilizing LD proxies in their place. This step will 
 be done multiple times for each exposure > outcome pair.
 
-Note: If an error is encounter in the query request, check "exp_snps_wo"
-to see if there are any snps to query, if none exist (will return 0 rows), then no need to run LD proxies step for that exposure/outcome pair.
-Just run harmonzation on exposure outcome for that pair.
-Example: No outcome snps were missing in the exposure for
+Note: If an error is encountered in the query request, check "exp_snps_wo"
+to see if there are any snps to query, if none exist (will return 0 rows), then
+there is no missing SNPS and no need to run LD proxies step for that 
+exposure/outcome pair.
+Just skip to run harmonization on that exposure outcome pair.
+Example: No outcome SNPs were missing in the exposure for
 longchamps_kunkle. So skip LD proxy step.
 
 
@@ -406,7 +407,7 @@ exp_snps_wo <- anti_join(
 
 
 # Use LDLinkR to identify proxy snps based on SNP dataset above
-# that presents SNPs with no corresponding match in the other.
+# that queries SNPs with no corresponding match in the outcome.
 LDproxy_batch(exp_snps_wo$SNP, 
         pop = "CEU", 
         r2d = "r2", 
@@ -492,7 +493,7 @@ exp_snps_wo <- anti_join(
 
 
 # Use LDLinkR to identify proxy snps based on SNP dataset above
-# that presents SNPs with no corresponding match in the other.
+# that queries SNPs with no corresponding match in the outcome.
 LDproxy_batch(exp_snps_wo$SNP, 
         pop = "CEU", 
         r2d = "r2", 
@@ -578,7 +579,7 @@ exp_snps_wo <- anti_join(
 
 
 # Use LDLinkR to identify proxy snps based on SNP dataset above
-# that presents SNPs with no corresponding match in the other.
+# that queries SNPs with no corresponding match in the outcome.
 LDproxy_batch(exp_snps_wo$SNP, 
         pop = "CEU", 
         r2d = "r2", 
@@ -663,7 +664,7 @@ exp_snps_wo <- anti_join(
 
 
 # Use LDLinkR to identify proxy snps based on SNP dataset above
-# that presents SNPs with no corresponding match in the other.
+# that queries SNPs with no corresponding match in the outcome.
 LDproxy_batch(exp_snps_wo$SNP, 
         pop = "CEU", 
         r2d = "r2", 
@@ -748,7 +749,7 @@ exp_snps_wo <- anti_join(
 
 
 # Use LDLinkR to identify proxy snps based on SNP dataset above
-# that presents SNPs with no corresponding match in the other.
+# that queries SNPs with no corresponding match in the outcome.
 LDproxy_batch(exp_snps_wo$SNP, 
         pop = "CEU", 
         r2d = "r2", 
@@ -833,7 +834,7 @@ exp_snps_wo <- anti_join(
 
 
 # Use LDLinkR to identify proxy snps based on SNP dataset above
-# that presents SNPs with no corresponding match in the other.
+# that queries SNPs with no corresponding match in the outcome.
 LDproxy_batch(exp_snps_wo$SNP, 
         pop = "CEU", 
         r2d = "r2", 
@@ -906,7 +907,7 @@ hagg_bellenguez_dat_proxy <- bind_rows(
 
 ## Harmonization and appending Step
 
-Harmonze and combine all six pairs of analysis.
+Harmonize and combine all six pairs of analysis.
 
 Chong_Kunkle
 Longchamps_Kunkle
@@ -918,7 +919,7 @@ Hagg_Bellenguez
 
 ``` {r eval=FALSE}
 #  Change the two datasets names to ones created
-# while performing clumping and LD proxies. Put proxy dataset in outcome slot (right)
+# while performing clumping and LD proxies. Put LD proxy dataset in outcome slot (right)
 
 # chong_kunkle_harmonization
 mtDNAcn_AD_Harm_chong_kunkle <- harmonise_data(mtDNAcn_clump_chong, chong_kunkle_dat_proxy,action=2)
@@ -952,10 +953,10 @@ mtDNAcn_AD_Harm_hagg_bellenguez <- harmonise_data(mtDNAcn_clump_hagg, hagg_belle
 
 ## Radial MR to Remove Outliers in each dataset pair.
 
-Radial MR will be ran first to Remove the presence of outliers.
+Radial MR will be conducted to identify outliers.
 
 ``` {r}
-#  Correction for Multiple testing bonferroni correction .05/nrow
+#  Correction for multiple testing bonferroni correction .05/nrow
 
 # Chong Kunkle pair
 
@@ -1466,6 +1467,7 @@ p4_scatter_prime_format_h_k <- p4_Prime_scatter[[1]] + theme_bw() +
 p4_scatter_prime_format_h_k
 
 # Chong_bellenguez Plots
+
 
 p1_Prime_Single_c_b <- mr_forest_plot(MrAD_single_mtDNAcn_Prime_c_b )
 p1_Prime_Single_c_b [[1]]
