@@ -37,3 +37,17 @@ vignettes/*.pdf
 
 # R Environment Variables
 .Renviron
+
+# RStudio Connect folder
+rsconnect/
+
+*.sumstats.gz
+data/**/*.gz
+data/*buildGRCh37.tsv
+.DS_Store
+*.DS_Store
+data/**/*.csv
+
+*.html
+Scripts/*.html
+
