@@ -1,7 +1,6 @@
 ---
-title: "MVMR_chong_kunkle"
-output: html_document
-date: "2024-08-22"
+title: "MVMR_chong_bellenguez"
+output: html_notebook
 ---
 
 ## Libraries
@@ -32,7 +31,6 @@ library(RMVMR)
 library(MendelianRandomization)
 
 library(MVMRmode)
-
 
 #MVMR Munge proxies
 source("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/Scripts/Functions/mvmr_munge_proxies.R")
@@ -202,16 +200,15 @@ platelets_clump <- filter(platelets_clump, !(chr.exposure == 19 & between(pos.ex
 
 ```
 
-## Outcome: Kunkle
-``` {r read_in_Kunkle}
-outcome_path_kunkle = "/wynton/group/andrews/data/summary_stats/results/Kunkle2019load_stage123.chrall.CPRA_b37.tsv.gz"
+## Outcome: Bellenguez
+```{r load in Bellenguez AD dataset}
+outcome_path_bellenguez = "/wynton/group/andrews/data/summary_stats/results/Bellenguez2022load.chrall.CPRA_b37.tsv.gz"
 
 # Import Code for outcome GWAS 
-OutcomeAD_kunkle <- read_tsv(outcome_path_kunkle,comment="#")
+OutcomeAD_Bellenguez <- read_tsv(outcome_path_bellenguez,comment="#")
 
 # Rename right-side variables to match column names of your GWAS dataset 
-
-outcome_AD_Format_kunkle <- OutcomeAD_kunkle %>%
+outcome_AD_Format_Bellenguez <- OutcomeAD_Bellenguez %>%
   format_data(.,
     type = "outcome",
     snps = NULL,
@@ -232,8 +229,8 @@ outcome_AD_Format_kunkle <- OutcomeAD_kunkle %>%
 ) %>%
   as_tibble()
 
-outcome_AD_Format_kunkle <- outcome_AD_Format_kunkle %>%
-mutate(outcome = "kunkle")
+outcome_AD_Format_Bellenguez <- outcome_AD_Format_Bellenguez %>%
+mutate(outcome = "bellenguez")
 ```
 
 ##Combine exposures and extract from exposure datasets
@@ -252,7 +249,6 @@ comb_exp <- bind_rows(
   platelets_formatted %>% filter(SNP %in% mvmr_snps),
 )
 ```
-
 
 ##Combine the exposure SNP lists and extract all the SNPs from each exposure
 ```{r}
@@ -275,7 +271,7 @@ comb_exp_out <- bind_rows(
     rename(pval = pval.exposure, trait = exposure, chr = chr.exposure, pos = pos.exposure), 
   platelets_formatted %>% filter(SNP %in% mvmr_snps) %>% 
     rename(pval = pval.exposure, trait = exposure, chr = chr.exposure, pos = pos.exposure), 
-  outcome_AD_Format_kunkle %>% filter(SNP %in% mvmr_snps) %>% 
+  outcome_AD_Format_Bellenguez %>% filter(SNP %in% mvmr_snps) %>% 
     rename(pval = pval.outcome, trait = outcome, chr = chr.outcome, pos = pos.outcome)
 )
 
@@ -289,7 +285,6 @@ comb_exp_wide <- comb_exp_out %>%
 comb_exp_wide %>% count(mtDNA_chong < 5e-8, Platlet_cn < 5e-8)  %>%
   gt() 
 ```
-
 
 ##Proxy SNPs for chong
 ```{r identify proxy SNPs and munge}
@@ -319,7 +314,7 @@ exp_snps_wo <- anti_join(
 
 
 ##Proxy SNPs for platelets
-```{r identify proxy SNPs and munge}
+```{r identify proxy SNPs for platelets and munge}
 
 # extract chong SNPs present in platelets
 exposure_clump_platelets <- semi_join(
@@ -362,14 +357,14 @@ comb_exp_independent <- comb_exp %>% filter(SNP %in% clump_comb_exp$SNP)
 ```{r}
 # extract exposure SNPs present in outcome
 outcome_clump <- semi_join(
-  outcome_AD_Format_kunkle, comb_exp_independent, by = "SNP"
+  outcome_AD_Format_Bellenguez, comb_exp_independent, by = "SNP"
 )
 
 # Exposure SNPs not present in outomce
 outcome_wo_snps <- anti_join(
-  comb_exp_independent, outcome_AD_Format_kunkle, by = "SNP"
+  comb_exp_independent, outcome_AD_Format_Bellenguez, by = "SNP"
 ) %>%
-  distinct(SNP) #13 SNPs
+  distinct(SNP) #24 SNPs
 ```
 
 #LD proxy SNP for outcome
@@ -381,10 +376,10 @@ LDproxy_batch(outcome_wo_snps$SNP,
         token = 'a6deee62cc4a', 
         append = TRUE,
         genome_build = "grch37")
-system("mv combined_query_snp_list_grch37.txt exposure_outcome_proxy_snps_chong_plate_kunkle.txt")
+system("mv combined_query_snp_list_grch37.txt exposure_outcome_proxy_snps_chong_plate_bellenguez.txt")
 
 # Munge proxy snp file
-outcome_dat <- munge_proxies("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/proxy_snps/exposure_outcome_proxy_snps_chong_plate_kunkle.txt", outcome_AD_Format_kunkle, outcome_clump)
+outcome_dat <- munge_proxies("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/proxy_snps/exposure_outcome_proxy_snps_chong_plate_bellenguez.txt", outcome_AD_Format_Bellenguez, outcome_clump)
 ```
 
 #Harmonize
@@ -396,17 +391,16 @@ mrdat <- harmonise_data(comb_exp_independent, outcome_dat) %>%
 
 ## MVMR
 mvdat <- mv_harmonise_data(comb_exp_independent, outcome_dat)
-
 ```
 
 #export 
 ```{r}
-write_rds(mvdat, 'harmonized_chong_plate_kunkle_mvmr.rds')
+#write_rds(mvdat, '/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/Harmonized_Datasets/harmonized_chong_plate_bellenguez_mvmr.rds')
 ```
 
 #Read in mvdat
 ```{r}
-mvdat <- read_rds('/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/Harmonized_Datasets/harmonized_longchamps_plate_kunkle_mvmr.rds')
+mvdat <- read_rds('/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/Harmonized_Datasets/harmonized_chong_plate_bellenguez_mvmr.rds')
 ```
 
 #Using TwoSample MR package
@@ -425,7 +419,7 @@ mvmr_dat <- cbind(mvdat$exposure_beta,
                  ) %>%
   as.data.frame() 
 
-colnames(mvmr_dat) <- c("IiFFho_beta", "oEdjcb_beta", "IiFFho_se", "oEdjcb_se", "outcome_beta", "outcome_se")
+colnames(mvmr_dat) <- c("1qfJkc_beta", "AM17AH_beta", "1qfJkc_se", "oAM17AH_se", "outcome_beta", "outcome_se")
 
 mvmr_dat <- mvmr_dat %>% rownames_to_column() %>% 
       as.matrix()
@@ -447,7 +441,7 @@ mvmr_out <- res_mvmr %>%
     rename(exposure = rowname, b = estimate, se = std_error, p = pr_t) %>%
     mutate(
       exposure = ifelse(exposure == 'exposure1', 'mtDNA_chong', 'Platlet_cn'), 
-      outcome = 'AD',
+      outcome = 'Bellenguez AD',
       method = 'IVW-MVMR'
     ) %>%
     relocate(outcome, method, .after = exposure)
@@ -484,7 +478,7 @@ MRMVInputObject <- MendelianRandomization::mr_mvinput(
   byse = mvdat$outcome_se,
   snps = rownames(mvdat$exposure_beta), 
   exposure = c('mtDNAcn_chong', 'Platelet_cn'), 
-  outcome = 'AD'
+  outcome = 'Bellenguez AD'
   )
 
 #IVW
@@ -529,7 +523,7 @@ MRMV_wbe_res <- MVMRmode::mv_mrmode(Bout = mvdat$outcome_beta,
 MRMV_wbe_df <- as_tibble(MRMV_wbe_res) %>%
   dplyr::rename(b = Estimate, p = Pvalue, se= StdError, lower_bound= CILower, upper_bound= CIUpper) %>%
   mutate(Exposure = c("mtDNAcn_chong", "Platelet_cn"), 
-         Outcome = "AD", 
+         Outcome = "Bellenguez AD", 
          method = 'Weighted mode',
          or= exp(b)) %>%
   # mutate_if(is.double, as.character) %>% 

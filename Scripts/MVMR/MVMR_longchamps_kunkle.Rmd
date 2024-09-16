@@ -26,13 +26,17 @@ library(janitor)
 
 library(MVMR)         # Multivarble MR
 
-#library(RMVMR)
+library(RMVMR)
+
+library(MendelianRandomization)
+
+library(MVMRmode)
 
 #MVMR Munge proxies
-source("/wynton/home/andrews/achatterjee/scripts/mvmr_munge_proxies.R")
+source("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/Scripts/Functions/mvmr_munge_proxies.R")
 
 #Munge proxies
-source("/wynton/home/andrews/achatterjee/scripts/munge_proxies.R")
+source("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/Scripts/Functions/munge_proxies.R")
 
 # Define column types for summary statistics (MDNA and AD GWAS)
 coltypes = cols(
@@ -377,7 +381,7 @@ LDproxy_batch(outcome_wo_snps$SNP,
 system("mv combined_query_snp_list_grch37.txt exposure_outcome_proxy_snps_longchamps_plate_kunkle.txt")
 
 # Munge proxy snp file
-outcome_dat <- munge_proxies("exposure_outcome_proxy_snps_longchamps_plate_kunkle.txt", outcome_AD_Format_kunkle, outcome_clump)
+outcome_dat <- munge_proxies("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/proxy_snps/exposure_outcome_proxy_snps_longchamps_plate_kunkle.txt", outcome_AD_Format_kunkle, outcome_clump)
 ```
 
 #Harmonize
@@ -399,15 +403,17 @@ write_rds(mvdat, 'harmonized_longchamps_plate_kunkle_mvmr.rds')
 
 #Read in mvdat
 ```{r}
-mvdat <- read_rds('harmonized_longchamps_plate_kunkle_mvmr.rds')
-
-mvmr_res <- mv_multiple(mvdat, plots = F)
-
+mvdat <- read_rds('/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/Harmonized_Datasets/harmonized_longchamps_plate_kunkle_mvmr.rds')
 ```
 
+#Using TwoSample MR package
+```{r}
+mvmr_res <- mv_multiple(mvdat, plots = F)
+```
 
 #Using MVMR package
 ```{r}
+#Formatting
 mvmr_dat <- cbind(mvdat$exposure_beta,
                   mvdat$exposure_se,
                   mvdat$outcome_beta,
@@ -415,11 +421,8 @@ mvmr_dat <- cbind(mvdat$exposure_beta,
                  ) %>%
   as.data.frame() 
 
-
-# Rename columns
 colnames(mvmr_dat) <- c("U2OgNS_beta", "vpi53w_beta", "U2OgNS_se", "vpi53w_se", "outcome_beta", "outcome_se")
 
-#Continue with mvmr_dat
 mvmr_dat <- mvmr_dat %>% rownames_to_column() %>% 
       as.matrix()
 
@@ -429,6 +432,7 @@ F.data <- format_mvmr(BXGs = mvmr_dat[,c(2,3)],
                     seBYG = mvmr_dat[,7],
                     RSID = mvmr_dat[,1])
 
+#Results
 res_mvmr <- ivw_mvmr(r_input = F.data)
 
 mvmr_out <- res_mvmr %>% 
@@ -443,5 +447,97 @@ mvmr_out <- res_mvmr %>%
       method = 'IVW-MVMR'
     ) %>%
     relocate(outcome, method, .after = exposure)
+
+#Diagnostics
+sres <- strength_mvmr(r_input = F.data, gencov = 0)
+pres <- pleiotropy_mvmr(r_input = F.data, gencov = 0)
 ```
 
+#Radial MVMR
+```{r}
+F.data_rmvmr <- format_rmvmr(BXGs = mvmr_dat[,c(2,3)],
+                    BYG = mvmr_dat[,6],
+                    seBXGs = mvmr_dat[,c(4,5)],
+                    seBYG = mvmr_dat[,7],
+                    RSID = mvmr_dat[,1])
+
+
+res_rmvrm <- ivw_rmvmr(F.data_rmvmr)
+
+sres_rmvrm <- strength_rmvmr(F.data_rmvmr, gencov = 0)
+
+#plot 
+rmvrm_p_nonresponse <- plot_rmvmr(F.data_rmvmr, res_rmvrm) %>% 
+  labs(title = "Radial MVMR")
+```
+
+#Other MR methods
+```{r}
+MRMVInputObject <- MendelianRandomization::mr_mvinput(
+  bx = mvdat$exposure_beta, 
+  bxse = mvdat$exposure_se,
+  by = mvdat$outcome_beta,
+  byse = mvdat$outcome_se,
+  snps = rownames(mvdat$exposure_beta), 
+  exposure = c('mtDNAcn_longchamps', 'Platelet_cn'), 
+  outcome = 'AD'
+  )
+
+#IVW
+MRMV_ivw <- MendelianRandomization::mr_mvivw(MRMVInputObject, 
+                       model="default", 
+                       correl=FALSE, 
+                       distribution="normal",
+                       alpha = 0.05)
+
+MRMV_ivw_df <- cbind(MRMV_ivw@Exposure, MRMV_ivw@Outcome, MRMV_ivw@Estimate, MRMV_ivw@StdError, MRMV_ivw@Pvalue) %>%
+  as_tibble() %>%
+  magrittr::set_colnames(c("Exposure", "Outcome", "b", "se", "p")) %>%
+  mutate(method = "IVW")
+
+#Egger
+MRMV_egger <- MendelianRandomization::mr_mvegger(MRMVInputObject, orientate = 1, correl = FALSE, distribution = "normal", alpha = 0.05)
+
+MRMV_egger_df <- cbind(MRMV_egger@Exposure, MRMV_egger@Outcome, MRMV_egger@Estimate, MRMV_egger@StdError.Est, MRMV_egger@Pvalue.Est) %>%
+  as_tibble() %>%
+  magrittr::set_colnames(c("Exposure", "Outcome", "b", "se", "p")) %>%
+  mutate(method = "Egger")
+
+#Weighted median 
+MRMV_wme <- MendelianRandomization::mr_mvmedian( MRMVInputObject, distribution = "normal", alpha = 0.05, iterations = 10000, seed = 314159265 )
+
+MRMV_wme_df <- cbind(MRMV_wme@Exposure, MRMV_wme@Outcome, MRMV_wme@Estimate, MRMV_wme@StdError, MRMV_wme@Pvalue) %>%
+  as_tibble() %>%
+  magrittr::set_colnames(c("Exposure", "Outcome", "b", "se", "p")) %>%
+  mutate(method = "Weighted median")
+
+#Weighted mode
+MRMV_wbe_res <- MVMRmode::mv_mrmode(Bout = mvdat$outcome_beta, 
+                    Bexp = mvdat$exposure_beta, 
+                    SEout = mvdat$outcome_se, 
+                    SEexp = mvdat$exposure_se, 
+                    # Mode="CM", Psi=0, CIMin = NA, CIMax = NA, CIStep = 0.001, alpha = 0.05, 
+                    residual="IVW",
+                    Mode="MBE", weighting = "weighted", stderror = "delta", phi = 1,
+                    distribution = "normal", iterations = 10000
+                    )
+
+MRMV_wbe_df <- as_tibble(MRMV_wbe_res) %>%
+  dplyr::rename(b = Estimate, p = Pvalue, se= StdError, lower_bound= CILower, upper_bound= CIUpper) %>%
+  mutate(Exposure = c("mtDNAcn_longchamps", "Platelet_cn"), 
+         Outcome = "AD", 
+         method = 'Weighted mode',
+         or= exp(b)) %>%
+  # mutate_if(is.double, as.character) %>% 
+  select("Exposure", "Outcome", "b", "se", "p", "method", "or", "lower_bound", "upper_bound")
+```
+
+#Confidence intervals
+```{r}
+combined_df <- bind_rows(MRMV_wme_df, MRMV_egger_df, MRMV_ivw_df)
+
+ci <- combined_df %>% 
+  mutate(b= as.numeric(b), se= as.numeric(se), p= as.numeric(p)) %>% 
+  mutate(or= exp(b)) %>% 
+  mutate(lower_bound= exp(b - 1.96 * se), upper_bound= exp(b + 1.96 * se))
+```
