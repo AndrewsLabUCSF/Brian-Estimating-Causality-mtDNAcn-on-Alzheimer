@@ -566,4 +566,3 @@ ci <- combined_df %>%
   mutate(or= exp(b)) %>% 
   mutate(lower_bound= exp(b - 1.96 * se), upper_bound= exp(b + 1.96 * se))
 ```
-

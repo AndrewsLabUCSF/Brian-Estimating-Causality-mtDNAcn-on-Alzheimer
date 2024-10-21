@@ -5,17 +5,6 @@ date: "`r Sys.Date()`"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-
-# Note: Run this code block manually by highlighting and running the individual lines.
-knitr::opts_chunk$set(echo = TRUE)
-
-knitr::opts_knit$set(root.dir = 'C:/Users/brian/OneDrive/Documents/GitHub/Casual_Estimate_mtDNAcn_on_Alzheimer')
-
-
-```
-
-
 ## Libraries
 
 Loads the appropriate packages for MR analysis
@@ -88,15 +77,15 @@ coltypes = cols(
 
 ``` {r read_in_chong}
 
-exposure_path_chong = "Resources/Chong2022mtdnacn_eur.chrall.CPRA_b37.tsv.gz"
+exposure_path_chong = "/wynton/group/andrews/data/summary_stats/results/Chong2022mtdnacn_eur.chrall.CPRA_b37.tsv"
 
-Exposure_mtDNAcn_chong <- read_tsv(exposure_path_chong,comment="#")
+mtDNAcn_chong <- read_tsv(exposure_path_chong,comment="#")
 
 
 # To format the GWAS results for MR analysis Exposure...
 # Rename right-side variables to match column names of your GWAS dataset 
 
-Format_mtDNAcn_chong <- Exposure_mtDNAcn_chong %>% format_data(.,
+Format_mtDNAcn_chong <- mtDNAcn_chong %>% format_data(.,
   type = "exposure",
   snps = NULL,
   header = TRUE,
@@ -122,7 +111,6 @@ Format_mtDNAcn_chong <- Exposure_mtDNAcn_chong %>% format_data(.,
 )  %>%
   as_tibble()
 
-# Adds dataset name for identification in MR analysis
 
 Format_mtDNAcn_chong <- Format_mtDNAcn_chong %>%
 mutate(exposure = "mtDNA_chong")
@@ -134,14 +122,14 @@ mutate(exposure = "mtDNA_chong")
 
 ``` {r read_in_longchamps}
 
-exposure_path_longchamps = "Resources/Longchamps2021mtdnacn.chrall.CPRA_b37.tsv.gz"
+exposure_path_longchamps = "/wynton/group/andrews/data/summary_stats/results/Longchamps2021mtdnacn.chrall.CPRA_b37.tsv.gz"
 
-Exposure_mtDNAcn_longchamps <- read_tsv(exposure_path_longchamps,comment="#")
+mtDNAcn_longchamps <- read_tsv(exposure_path_longchamps,comment="#")
 
 
 # To format the GWAS results for MR analysis Exposure. 
 # Rename right-side variables to match column names of your GWAS dataset.
-Format_mtDNAcn_longchamps <- Exposure_mtDNAcn_longchamps %>% format_data(.,
+Format_mtDNAcn_longchamps <- mtDNAcn_longchamps %>% format_data(.,
   type = "exposure",
   snps = NULL,
   header = TRUE,
@@ -167,10 +155,10 @@ Format_mtDNAcn_longchamps <- Exposure_mtDNAcn_longchamps %>% format_data(.,
 )  %>%
   as_tibble()
 
-# Adds dataset name for identification in MR analysis
 
 Format_mtDNAcn_longchamps <- Format_mtDNAcn_longchamps %>%
 mutate(exposure = "mtDNA_longchamps")
+
 
 
 ```
@@ -179,15 +167,14 @@ mutate(exposure = "mtDNA_longchamps")
 
 ``` {r read_in_hagg}
 
-exposure_path_hagg = "Resources/Hagg2020mtdnacn.chrall.CPRA_b37.tsv.gz"
+exposure_path_hagg = "/wynton/group/andrews/data/summary_stats/results/Hagg2020mtdnacn.chrall.CPRA_b37.tsv.gz"
 
-Exposure_mtDNAcn_hagg <- read_tsv(exposure_path_hagg,comment="#")
+mtDNAcn_hagg <- read_tsv(exposure_path_hagg,comment="#")
 
 
-# Format the GWAS results for MR analysis Exposure. 
-
+# To format the GWAS results for MR analysis Exposure. 
 # Rename right-side variables to match column names of your GWAS dataset.
-Format_mtDNAcn_hagg <- Exposure_mtDNAcn_hagg %>% format_data(.,
+Format_mtDNAcn_hagg <- mtDNAcn_hagg %>% format_data(.,
   type = "exposure",
   snps = NULL,
   header = TRUE,
@@ -213,7 +200,6 @@ Format_mtDNAcn_hagg <- Exposure_mtDNAcn_hagg %>% format_data(.,
 )  %>%
   as_tibble()
 
-# Adds dataset name for identification in MR analysis
 
 Format_mtDNAcn_hagg <- Format_mtDNAcn_hagg %>%
 mutate(exposure = "mtDNA_hagg")
@@ -227,14 +213,13 @@ This step imports our GWAS Outcome data sets and formats them up for MR analysis
 
 ``` {r read_in_Bellenguez}
 
-outcome_path_bellenguez = "Resources/Bellenguez2022load.chrall.CPRA_b37.tsv.gz"
+outcome_path_bellenguez = "/wynton/group/andrews/data/summary_stats/results/Bellenguez2022load.chrall.CPRA_b37.tsv.gz"
 
 # Import Code for outcome GWAS 
-OutcomeAD_bellenguez <- read_tsv(outcome_path_bellenguez,comment="#")
+OutcomeAD_Bellenguez <- read_tsv(outcome_path_bellenguez,comment="#")
 
 # Rename right-side variables to match column names of your GWAS dataset 
-
-outcome_AD_Format_bellenguez <- OutcomeAD_bellenguez %>%
+outcome_AD_Format_Bellenguez <- OutcomeAD_Bellenguez %>%
   format_data(.,
     type = "outcome",
     snps = NULL,
@@ -255,10 +240,8 @@ outcome_AD_Format_bellenguez <- OutcomeAD_bellenguez %>%
 ) %>%
   as_tibble()
 
-# Adds dataset name for identification in MR analysis
-
-outcome_AD_Format_bellenguez <- outcome_AD_Format_bellenguez %>%
-mutate(outcome = "AD_bellenguez")
+outcome_AD_Format_Bellenguez <- outcome_AD_Format_Bellenguez %>%
+mutate(outcome = "bellenguez")
 
 ```
 
@@ -267,7 +250,7 @@ mutate(outcome = "AD_bellenguez")
 ``` {r read_in_Kunkle}
 
 
-outcome_path_kunkle = "Resources/Kunkle2019load_stage123.chrall.CPRA_b37.tsv.gz"
+outcome_path_kunkle = "/wynton/group/andrews/data/summary_stats/results/Kunkle2019load_stage123.chrall.CPRA_b37.tsv.gz"
 
 # Import Code for outcome GWAS 
 OutcomeAD_kunkle <- read_tsv(outcome_path_kunkle,comment="#")
@@ -295,10 +278,8 @@ outcome_AD_Format_kunkle <- OutcomeAD_kunkle %>%
 ) %>%
   as_tibble()
 
-#Adds dataset name for identification in MR analysis
-
 outcome_AD_Format_kunkle <- outcome_AD_Format_kunkle %>%
-mutate(outcome = "AD_kunkle")
+mutate(outcome = "kunkle")
 
 ```
 

@@ -1,0 +1,299 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+## Libraries
+
+Loads the appropriate packages for MR analysis
+
+``` {r eval=FALSE}
+library(tidyverse) # Data wrangling 
+
+library(cowplot)
+
+library(ggman)
+
+library(TwoSampleMR) # MR 
+
+library(RadialMR) # Radial MR sensitivity analysis 
+
+library(phenoscanner)
+
+library(LDlinkR) # LD and proxy snps
+
+library(janitor)
+
+library(MVMR)         # Multivarble MR
+
+library(RMVMR)
+
+library(MendelianRandomization)
+
+library(MVMRmode)
+
+#MVMR Munge proxies
+source("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/Scripts/Functions/mvmr_munge_proxies.R")
+
+#Munge proxies
+source("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/Scripts/Functions/munge_proxies.R")
+
+# Define column types for summary statistics (MDNA and AD GWAS)
+coltypes = cols(
+  ID = col_character(),
+  CHROM = col_double(),
+  POS = col_double(),
+  REF = col_character(),
+  ALT = col_character(),
+  AF = col_double(),
+  TRAIT = col_character(),
+  BETA = col_double(),
+  SE = col_double(),
+  Z = col_double(),
+  P = col_double(),
+  N = col_double(),
+  OR = col_double(),
+  OR_L95 = col_double(),
+  OR_U95 = col_double(),
+  DIR = col_character(),
+  G1000_ID = col_character(),
+  G1000_VARIANT = col_character(),
+  DBSNP_ID = col_character(),
+  DBSNP_VARIANT = col_character(),
+  OLD_ID = col_character(),
+  OLD_VARIANT = col_character()
+)
+
+```
+
+## Exposure 1: Longchamps
+``` {r read_in_longchamps}
+
+exposure_path_longchamps = "/wynton/group/andrews/data/summary_stats/results/Longchamps2021mtdnacn.chrall.CPRA_b37.tsv.gz"
+
+mtDNAcn_longchamps <- read_tsv(exposure_path_longchamps,comment="#")
+
+
+# To format the GWAS results for MR analysis Exposure. 
+# Rename right-side variables to match column names of your GWAS dataset.
+Format_mtDNAcn_longchamps <- mtDNAcn_longchamps %>% format_data(.,
+  type = "exposure",
+  snps = NULL,
+  header = TRUE,
+  phenotype_col = "TRAIT",
+  snp_col = "DBSNP_ID",
+  beta_col = "BETA",
+  se_col = "SE",
+  eaf_col = "AF",
+  effect_allele_col = "REF",
+  other_allele_col = "ALT",
+  pval_col = "P",
+  units_col = "units",
+  ncase_col = "N_CASES",
+  ncontrol_col = "N_CTRLS",
+  samplesize_col = "N",
+  gene_col = "gene",
+  min_pval = 1e-200,
+  z_col = "Z",
+  info_col = "info",
+  chr_col = "CHROM",
+  pos_col = "POS",
+  log_pval = FALSE
+)  %>%
+  as_tibble()
+
+
+Format_mtDNAcn_longchamps <- Format_mtDNAcn_longchamps %>%
+mutate(exposure = "mtDNA_longchamps")
+
+
+# longchamps Filter and Clumping
+options(ieugwasr_api = 'gwas-api.mrcieu.ac.uk/')
+
+mtDNAcn_longchamps_gws <- filter(Format_mtDNAcn_longchamps, pval.exposure < 5e-8)
+
+
+mtDNAcn_clump_longchamps <- clump_data(mtDNAcn_longchamps_gws, clump_kb = 10000,
+                            clump_r2 = 0.001,
+                            clump_p1 = 1,
+                            clump_p2 = 1,
+                            pop = "EUR"
+)%>% 
+  as_tibble()
+
+#Remove APOE region
+mtDNAcn_clump_longchamps <- filter(mtDNAcn_clump_longchamps, !(chr.exposure == 19 & between(pos.exposure, 44912079, 45912079)))
+```
+
+## Outcome: Bellenguez
+```{r load in Bellenguez AD dataset}
+outcome_path_bellenguez = "/wynton/group/andrews/data/summary_stats/results/Bellenguez2022load.chrall.CPRA_b37.tsv.gz"
+
+# Import Code for outcome GWAS 
+OutcomeAD_Bellenguez <- read_tsv(outcome_path_bellenguez,comment="#")
+
+# Rename right-side variables to match column names of your GWAS dataset 
+outcome_AD_Format_Bellenguez <- OutcomeAD_Bellenguez %>%
+  format_data(.,
+    type = "outcome",
+    snps = NULL,
+    header = TRUE,
+    phenotype_col = "Phenotype",
+    snp_col = "DBSNP_ID",
+    beta_col = "BETA",
+    se_col = "SE",
+    eaf_col = "AF",
+    effect_allele_col = "ALT",
+    other_allele_col = "REF",
+    pval_col = "P",
+    samplesize_col = "N",
+    z_col = "Z",
+    chr_col = "CHROM",
+    pos_col = "POS",
+    log_pval = FALSE
+) %>%
+  as_tibble()
+
+outcome_AD_Format_Bellenguez <- outcome_AD_Format_Bellenguez %>%
+mutate(outcome = "bellenguez")
+```
+
+#LD proxy SNPs
+```{r}
+# extract hagg SNPs present in outcome
+outcome_clump <- semi_join(
+ outcome_AD_Format_Bellenguez, mtDNAcn_clump_longchamps, by = "SNP"
+)
+
+# Hagg SNPs not present in outcome
+exp_snps_wo <- anti_join(
+  mtDNAcn_clump_longchamps, outcome_AD_Format_Bellenguez, by = "SNP"
+) #0 SNPs
+
+# Use LDLinkR to identify proxy snps
+LDproxy_batch(exp_snps_wo$SNP, 
+        pop = "CEU", 
+        r2d = "r2", 
+        token = 'a6deee62cc4a', 
+        append = TRUE,
+        genome_build = "grch37")
+system("mv combined_query_snp_list_grch37.txt exposure_outcome_proxy_snps_longchamps_bellenguez_Aadrita.txt")
+
+# Munge proxy snp file
+#outcome_dat <- munge_proxies(outcome_AD_Format_Bellenguez, outcome_clump)
+```
+
+#Harmonise
+```{r}
+harmonised_data <- harmonise_data(mtDNAcn_clump_longchamps, outcome_AD_Format_Bellenguez, action = 2) %>% as_tibble() %>%
+#  mutate(
+#    apoe_region = case_when(
+#      chr.outcome == 19 & between(pos.outcome, 44912079, 45912079) ~ TRUE,
+#      TRUE ~ FALSE
+#    ), 
+#    gws.outcome = ifelse(pval.outcome < 5e-8, TRUE, FALSE), 
+#   mr_keep = ifelse(mr_keep == FALSE | apoe_region == TRUE | gws.outcome == TRUE, FALSE, TRUE)
+#  )
+  filter(pval.exposure < 5e-8)
+```
+
+#Export
+```{r}
+write_csv(harmonised_data, "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/Harmonized_Datasets/longchamps_bellenguez_univariate_harmonised_data.csv")
+```
+
+#Import harmonised dataset
+```{r}
+harmonised_data <- read_csv("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/Harmonized_Datasets/longchamps_bellenguez_univariate_harmonised_data.csv")
+```
+
+#MR
+```{r}
+mr_res <- mr(harmonised_data, method_list = c(
+  "mr_two_sample_ml",  "mr_egger_regression", "mr_weighted_median", 
+  "mr_ivw_fe", "mr_ivw_mre",
+  "mr_simple_mode", "mr_weighted_mode"
+  ))
+
+res_single <- mr_singlesnp(harmonised_data, all_method = c("mr_ivw_fe", "mr_egger_regression", "mr_weighted_median", "mr_weighted_mode")) %>% as_tibble()
+
+```
+
+##Sensitivity analyses
+```{r}
+mr_heterogeneity(harmonised_data)
+mr_pleiotropy_test(harmonised_data)
+```
+
+##Radial MR (outliers detected)-- fix this
+```{r}
+radial_dat <- harmonised_data %>% filter(mr_keep == T) %>% dat_to_RadialMR()
+rmr_dat <- radial_dat$mtDNA_longchamps.bellenguez
+
+# Run Radial MR
+bonff = 0.05/nrow(rmr_dat) # Bonferonni Correction
+radial_ivw_res <- ivw_radial(rmr_dat, alpha = bonff) 
+
+radial_egger_res <- egger_radial(rmr_dat, alpha = bonff) 
+
+
+#Plot
+ivw_radial_p <- plot_radial(radial_ivw_res, radial_scale = F, show_outliers = F)
+egger_radial_p <- plot_radial(radial_egger_res, radial_scale = F, show_outliers = F)
+
+## Modify the mrkeep variable to flag variants as outliers from radial MR for removal
+mr_dat_outlier <- harmonised_data %>%
+  left_join(radial_ivw_res$dat) %>%
+  mutate(
+     mr_keep = case_when(
+       Outliers == "Outlier" ~ FALSE, 
+       TRUE ~ mr_keep
+     )
+  )
+
+## MR analysis 
+mr_res_outlier <- mr(mr_dat_outlier, method_list = c("mr_ivw_fe", "mr_egger_regression", "mr_weighted_median", "mr_weighted_mode"))
+
+# Heterogeneity statistics 
+mr_het_outlier <- mr_heterogeneity(mr_dat_outlier, method_list = c("mr_egger_regression", "mr_ivw")) 
+
+# Horizontal pleitropy
+mr_plt_outlier <- mr_pleiotropy_test(mr_dat_outlier)
+
+# Radial MR 
+radial_dat_outlier <- mr_dat_outlier %>% filter(mr_keep == T) %>% dat_to_RadialMR()
+radial_res_outlier <- ivw_radial(radial_dat_outlier$mtDNA_longchamps.bellenguez, alpha = 0.05/nrow(radial_dat_outlier$mtDNA_longchamps.bellenguez)) 
+
+```
+
+#MRLap
+```{r}
+#remotes::install_github("n-mounier/MRlap")
+library(MRlap)
+
+#Reformatting exposure
+reformat_mtDNAcn_longchamps <- mtDNAcn_longchamps %>% 
+  rename(rsid = "DBSNP_ID", chr = "CHROM", ) %>% 
+  select(-OR)
+
+#Reformatting outcome
+outcome <- OutcomeAD_Bellenguez %>% 
+  dplyr::rename(rs = DBSNP_ID, chr = CHROM) %>% 
+  select(-OR) %>% 
+  filter(rs != 'rs429358')
+
+mrlap <- MRlap(exposure = reformat_mtDNAcn_longchamps,
+               exposure_name = "exposure",
+               outcome = outcome,
+               outcome_name = "outcome",
+               MR_pruning_dist = 10000,
+               MR_pruning_LD = 0.001,
+               ld = "/wynton/group/andrews/data/eur_w_ld_chr/",
+               hm3 = "/wynton/group/andrews/data/w_hm3.snplist")
+mrlap
+
+mrlap$MRcorrection$IVs
+
+filter(outcome, rs %in% mrlap$MRcorrection$IVs)
+
+```
