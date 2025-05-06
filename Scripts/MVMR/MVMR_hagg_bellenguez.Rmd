@@ -422,7 +422,7 @@ mvdat <- mv_harmonise_data(comb_exp_independent, outcome_dat)
 
 #Read in mvdat
 ```{r}
-mvdat <- read_rds('/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/Harmonized_Datasets/harmonized_longchamps_plate_kunkle_mvmr.rds')
+mvdat <- read_rds('/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/Harmonized_Datasets/harmonized_hagg_plate_bellenguez_mvmr.rds')
 ```
 
 #Using TwoSample MR package
@@ -459,7 +459,7 @@ mvmr_out <- res_mvmr %>%
     rownames_to_column() %>%
     as_tibble() %>% 
     janitor::clean_names() %>%
-    rename(exposure = rowname, b = estimate, se = std_error, p = pr_t) %>%
+    dplyr::rename(exposure = rowname, b = estimate, se = std_error, p = pr_t) %>%
     mutate(
       exposure = ifelse(exposure == 'exposure1', 'mtDNA_hagg', 'Platlet_cn'), 
       outcome = 'Bellenguez AD',
@@ -558,5 +558,9 @@ combined_df <- bind_rows(MRMV_wme_df, MRMV_egger_df, MRMV_ivw_df)
 ci <- combined_df %>% 
   mutate(b= as.numeric(b), se= as.numeric(se), p= as.numeric(p)) %>% 
   mutate(or= exp(b)) %>% 
-  mutate(lower_bound= exp(b - 1.96 * se), upper_bound= exp(b + 1.96 * se))
+  mutate(lower_bound= exp(b - 1.96 * se), upper_bound= exp(b + 1.96 * se)) %>% 
+  filter(Exposure != "Platelet_cn")
+
+#Export 
+write_csv(ci, "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/results/Aadrita_results/mvmr_results/hagg_bellenguez.csv")
 ```

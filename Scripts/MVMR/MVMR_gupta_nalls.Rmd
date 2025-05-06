@@ -1,7 +1,6 @@
 ---
-title: "MVMR_chong_kunkle"
-output: html_document
-date: "2024-08-22"
+title: "R Notebook"
+output: html_notebook
 ---
 
 ## Libraries
@@ -32,7 +31,6 @@ library(RMVMR)
 library(MendelianRandomization)
 
 library(MVMRmode)
-
 
 #MVMR Munge proxies
 source("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/Scripts/Functions/mvmr_munge_proxies.R")
@@ -68,63 +66,54 @@ coltypes = cols(
 
 ```
 
-## Exposure 1: Chong
-``` {r read_in_chong}
+## Exposure 1: Gupta mtDNAcn 
+``` {r read_in_gupta}
+#Read in Gupta
+mtDNAcn_gupta <- read_tsv("/wynton/group/andrews/data/summary_stats/results/Gupta2023mtDNAcn.tsv")
 
-exposure_path_chong = "/wynton/group/andrews/data/summary_stats/results/Chong2022mtdnacn_eur.chrall.CPRA_b37.tsv"
-
-mtDNAcn_chong <- read_tsv(exposure_path_chong,comment="#")
-
-
-# To format the GWAS results for MR analysis Exposure. 
-# Rename right-side variables to match column names of your GWAS dataset.
-Format_mtDNAcn_chong <- mtDNAcn_chong %>% format_data(.,
-  type = "exposure",
-  snps = NULL,
-  header = TRUE,
-  phenotype_col = "TRAIT",
-  snp_col = "DBSNP_ID",
-  beta_col = "BETA",
-  se_col = "SE",
-  eaf_col = "AF",
-  effect_allele_col = "REF",
-  other_allele_col = "ALT",
-  pval_col = "P",
-  units_col = "units",
-  ncase_col = "N_CASES",
-  ncontrol_col = "N_CTRLS",
-  samplesize_col = "N",
-  gene_col = "gene",
-  min_pval = 1e-200,
-  z_col = "Z",
-  info_col = "info",
-  chr_col = "CHROM",
-  pos_col = "POS",
-  log_pval = FALSE
-)  %>%
+#Format (switched alleles)
+Format_mtDNAcn_gupta <- mtDNAcn_gupta %>%   
+  format_data(.,
+              snps = NULL,
+              header = TRUE,
+              snp_col = "SNP",
+              beta_col = "BETA",
+              se_col = "SE",
+              eaf_col = "FRQ",
+              phenotype_col = "TRAIT",
+              effect_allele_col = "A2",
+              other_allele_col = "A1",
+              pval_col = "P",
+              chr_col = "CHR",
+              pos_col = "BP",
+              log_pval = FALSE 
+   ) %>%
   as_tibble()
 
+Format_mtDNAcn_gupta <- Format_mtDNAcn_gupta %>%
+mutate(exposure = "mtDNA_gupta")
 
-Format_mtDNAcn_chong <- Format_mtDNAcn_chong %>%
-mutate(exposure = "mtDNA_chong")
-
-
-# longchamps Filter and Clumping
-options(ieugwasr_api = 'gwas-api.mrcieu.ac.uk/')
-
-mtDNAcn_chong_gws <- filter(Format_mtDNAcn_chong, pval.exposure < 5e-8)
+mtDNAcn_gupta_gws <- filter(Format_mtDNAcn_gupta, pval.exposure < 5e-8)
 
 
-mtDNAcn_clump_chong <- clump_data(mtDNAcn_chong_gws, clump_kb = 10000,
-                            clump_r2 = 0.001,
-                            clump_p1 = 1,
-                            clump_p2 = 1,
-                            pop = "EUR"
-)%>% 
-  as_tibble()
+#Clump locally
+mtDNAcn_clump_gupta <- mtDNAcn_gupta_gws %>% 
+  filter(pval.exposure < 1e-5) %>%
+  select(rsid = SNP, pval = pval.exposure) %>%
+  ieugwasr::ld_clump(
+    dat = .,
+    clump_kb = 10000,
+    clump_r2 = 0.001,
+    clump_p = 0.99,
+    bfile = '/wynton/group/andrews/data/reference_panels/EUR_All_Chr',
+    plink_bin = '/wynton/home/andrews/achatterjee/plink'
+  )
+
+#Append the SNPS to combined_mtDNAcn so we can get all the columns
+mtDNAcn_gupta_new <- filter(Format_mtDNAcn_gupta, SNP %in% mtDNAcn_clump_gupta$rsid)
 
 #Remove APOE region
-mtDNAcn_clump_chong <- filter(mtDNAcn_clump_chong, !(chr.exposure == 19 & between(pos.exposure, 44912079, 45912079)))
+mtDNAcn_clump_gupta <- filter(mtDNAcn_gupta_new, !(chr.exposure == 19 & between(pos.exposure, 44912079, 45912079)))
 ```
 
 ## Exposure 2: Blood Cell Composition 
@@ -133,7 +122,7 @@ This will be adjusting for differences in relative mtDNA count number in differe
 cell types in our exposures.
 
 ```{r exposure2}
-
+#Read in platelet dataset
 exposure2_path_mod = "/wynton/group/andrews/data/summary_stats/results/Astle2016platelets"
 
 platelets <- read_tsv(exposure2_path_mod, comment = "##")
@@ -152,7 +141,6 @@ rename(CHROM = chromosome,
         OR_U95 = ci_upper,
         DBSNP_ID = hm_rsid  )
            
-
          
 # Format data to TwoSampleMR format
 platelets_formatted <- platelets_renamed %>%
@@ -173,7 +161,9 @@ platelets_formatted <- platelets_renamed %>%
 ) %>%
   as_tibble()
 
-platelets_formatted <- platelets_formatted %>%
+#write_csv(platelets_formatted, "platelets_formatted.csv")
+
+platelets_formatted <- read_csv("platelets_formatted.csv") %>%
 mutate(exposure = "Platlet_cn")
 
 platelets_gws <- filter(platelets_formatted, pval.exposure < 5e-8)
@@ -192,55 +182,49 @@ platelets_clump <- platelets_gws %>%
 
 platelets_clump <- filter(platelets_clump, !(chr.exposure == 19 & between(pos.exposure, 44912079, 45912079)))
 
-# Export Clumped and Filtered dataset.
-
-#write_csv(exposure2_dat, 'Resources/platelets_clumped_dataset.csv')
-
-#Read in exposure2_dat 
-
-#exposure2_dat <- read_csv("/Users/achatterjee/gitcode/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/Resources/platelets_clumped_dataset.csv")
-
+#Read in clumped platelets dataset
+platelets_clump <- read_csv("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/other/platelets_clumped_dataset.csv")
 ```
 
-## Outcome: Kunkle
-``` {r read_in_Kunkle}
-outcome_path_kunkle = "/wynton/group/andrews/data/summary_stats/results/Kunkle2019load_stage123.chrall.CPRA_b37.tsv.gz"
+## Outcome: Nalls PD
+```{r}
+#Read munged sumstats 
+OutcomeAD_Nalls_munge_sumstats <- read_tsv("/wynton/group/andrews/data/summary_stats/results/Nalls2019_PD.tsv")
 
-# Import Code for outcome GWAS 
-OutcomeAD_kunkle <- read_tsv(outcome_path_kunkle,comment="#")
+#Make N column N_CAS+N_CON
+OutcomeAD_Nalls_munge_sumstats <- OutcomeAD_Nalls_munge_sumstats %>%
+  mutate(N = N_CAS + N_CON)
+
 
 # Rename right-side variables to match column names of your GWAS dataset 
-
-outcome_AD_Format_kunkle <- OutcomeAD_kunkle %>%
+outcome_AD_Format_Nalls <- OutcomeAD_Nalls_munge_sumstats %>%
   format_data(.,
     type = "outcome",
-    snps = NULL,
+    #snps = NULL,
     header = TRUE,
-    phenotype_col = "Phenotype",
-    snp_col = "DBSNP_ID",
+    snp_col = "SNP",
     beta_col = "BETA",
     se_col = "SE",
-    eaf_col = "AF",
-    effect_allele_col = "ALT",
-    other_allele_col = "REF",
+    eaf_col = "FRQ",
+    effect_allele_col = "A1",
+    other_allele_col = "A2",
     pval_col = "P",
     samplesize_col = "N",
-    z_col = "Z",
-    chr_col = "CHROM",
-    pos_col = "POS",
+    pos_col = "BP",
+    chr_col = "CHR",
     log_pval = FALSE
 ) %>%
   as_tibble()
 
-outcome_AD_Format_kunkle <- outcome_AD_Format_kunkle %>%
-mutate(outcome = "kunkle")
+outcome_AD_Format_Nalls <- outcome_AD_Format_Nalls %>%
+mutate(outcome = "nalls_PD")
 ```
 
 ##Combine exposures and extract from exposure datasets
 ```{r}
 ## Make list of distinct SNPs from the exposures independent GWS snps 
 mvmr_snps <- bind_rows(
-  select(mtDNAcn_clump_chong, SNP), 
+  select(mtDNAcn_clump_gupta, SNP), 
   select(platelets_clump, SNP), 
 ) %>%
   distinct(SNP) %>%
@@ -248,16 +232,15 @@ mvmr_snps <- bind_rows(
 
 ## extract combined SNP list from exposure datasets 
 comb_exp <- bind_rows(
-  Format_mtDNAcn_chong %>% filter(SNP %in% mvmr_snps),
+  Format_mtDNAcn_gupta %>% filter(SNP %in% mvmr_snps),
   platelets_formatted %>% filter(SNP %in% mvmr_snps),
 )
 ```
 
-
 ##Combine the exposure SNP lists and extract all the SNPs from each exposure
 ```{r}
 exp_snp_list <- full_join(
-  select(mtDNAcn_clump_chong, SNP, exposure), 
+  select(mtDNAcn_clump_gupta, SNP, exposure), 
   select(platelets_clump, SNP, exposure), 
   by = 'SNP'
 )
@@ -271,11 +254,11 @@ both_unq_snps <- filter(exp_snp_list, !is.na(exposure.y) & !is.na(exposure.x)) %
 
 ## exposure and outcome snps lists 
 comb_exp_out <- bind_rows(
-  Format_mtDNAcn_chong %>% filter(SNP %in% mvmr_snps) %>% 
+  Format_mtDNAcn_gupta %>% filter(SNP %in% mvmr_snps) %>% 
     rename(pval = pval.exposure, trait = exposure, chr = chr.exposure, pos = pos.exposure), 
   platelets_formatted %>% filter(SNP %in% mvmr_snps) %>% 
     rename(pval = pval.exposure, trait = exposure, chr = chr.exposure, pos = pos.exposure), 
-  outcome_AD_Format_kunkle %>% filter(SNP %in% mvmr_snps) %>% 
+  outcome_AD_Format_Nalls %>% filter(SNP %in% mvmr_snps) %>% 
     rename(pval = pval.outcome, trait = outcome, chr = chr.outcome, pos = pos.outcome)
 )
 
@@ -284,51 +267,48 @@ comb_exp_wide <- comb_exp_out %>%
   arrange(chr, pos) %>%
   select(SNP, trait, pval) %>%
   pivot_wider(names_from = trait, values_from = pval) %>%
-  mutate(pval.exposure = pmin(mtDNA_chong, Platlet_cn, na.rm = T))
+  mutate(pval.exposure = pmin(mtDNA_gupta, Platlet_cn, na.rm = T))
 
-comb_exp_wide %>% count(mtDNA_chong < 5e-8, Platlet_cn < 5e-8)  %>%
+comb_exp_wide %>% count(mtDNA_gupta < 5e-8, Platlet_cn < 5e-8)  %>%
   gt() 
 ```
 
-
-##Proxy SNPs for chong
+##Proxy SNPs for gupta
 ```{r identify proxy SNPs and munge}
 
 # extract platelet SNPs present in chong
-exposure_clump_chong <- semi_join(
- Format_mtDNAcn_chong, platelets_clump, by = "SNP"
+exposure_clump_gupta <- semi_join(
+ Format_mtDNAcn_gupta, platelets_clump, by = "SNP"
 )
 
 # Platelet SNPs not present in chong
 exp_snps_wo <- anti_join(
-  platelets_clump, Format_mtDNAcn_chong, by = "SNP"
-) #0 SNPs
+  platelets_clump, Format_mtDNAcn_gupta, by = "SNP"
+) #126 SNPs
 
 # Use LDLinkR to identify proxy snps
-# LDproxy_batch(exp_snps_wo$SNP, 
-#         pop = "CEU", 
-#         r2d = "r2", 
-#         token = '7dbc1afe7454', 
-#         append = TRUE,
-#         genome_build = "grch37")
-# system("mv combined_query_snp_list_grch37.txt exposure_outcome_proxy_snps_longchamps_kunkle_plate.txt")
-# 
-# # Munge proxy snp file
-# longchamps_proxy <- mvmr_munge_proxies("exposure_outcome_proxy_snps_longchamps_kunkle_plate.txt", Format_mtDNAcn_longchamps) 
-```
+LDproxy_batch(exp_snps_wo$SNP, 
+         pop = "CEU", 
+         r2d = "r2", 
+         token = '7dbc1afe7454', 
+         append = TRUE,
+         genome_build = "grch37")
+ system("mv combined_query_snp_list_grch37.txt exposure_outcome_proxy_snps_gupta_bellenguez_platelet.txt")
 
+ # Munge proxy snp file (used the same one as Gupta_bellenguez_platelet since they had the same proxy snps)
+gupta_proxy <- mvmr_munge_proxies("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/proxy_snps/exposure_outcome_proxy_snps_gupta_bellenguez_platelet.txt", Format_mtDNAcn_gupta) 
+```
 
 ##Proxy SNPs for platelets
-```{r identify proxy SNPs and munge}
-
-# extract chong SNPs present in platelets
+```{r identify proxy SNPs for platelets and munge}
+# extract gupta SNPs present in platelets
 exposure_clump_platelets <- semi_join(
- platelets_formatted, mtDNAcn_clump_chong, by = "SNP"
+ platelets_formatted, mtDNAcn_clump_gupta, by = "SNP"
 )
 
-# Chong SNPs not present in platelets
+# Gupta SNPs not present in platelets
 exp_snps_wo <- anti_join(
-  mtDNAcn_clump_chong, platelets_formatted, by = "SNP"
+  mtDNAcn_clump_gupta, platelets_formatted, by = "SNP"
 ) #0 SNPs
 
 # Use LDLinkR to identify proxy snps
@@ -344,32 +324,57 @@ exp_snps_wo <- anti_join(
 # longchamps_proxy <- mvmr_munge_proxies("exposure_outcome_proxy_snps_longchamps_kunkle_plate.txt", Format_mtDNAcn_longchamps) 
 ```
 
-#Clump combined exposures
-```{r}
-clump_comb_exp <- comb_exp_wide %>% 
-  clump_data(.,
-  clump_kb = 10000,
-  clump_r2 = 0.001,
-  clump_p1 = 1,
-  clump_p2 = 1,
-  pop = "EUR"
-)
+##Combine proxy SNPs
+```{r combining proxy SNPs, gupta and platelet datasets}
+comb_exp_proxy <- bind_rows(
+  Format_mtDNAcn_gupta %>% filter(SNP %in% mvmr_snps), 
+  gupta_proxy %>%
+    select(-c(X13, proxy.exposure, target_snp.exposure, proxy_snp.exposure, 
+              target_a1.exposure, proxy_a1.exposure, target_a2.exposure, proxy_a2.exposure)),
+  platelets_formatted %>% filter(SNP %in% mvmr_snps),
+  )
 
-comb_exp_independent <- comb_exp %>% filter(SNP %in% clump_comb_exp$SNP) 
+gupta_platelet_proxy <- comb_exp_proxy %>%
+  select(SNP, pval.exposure, exposure) %>%
+  distinct(SNP, exposure, .keep_all = TRUE) %>% 
+  pivot_wider(names_from = exposure, values_from = pval.exposure) %>%
+  mutate(pval.exposure = pmin(mtDNA_gupta, Platlet_cn, na.rm = T)
+         )
+```
+
+#Clump locally
+```{r}
+clump_comb_exp <- gupta_platelet_proxy %>% 
+  select(rsid = SNP, pval = pval.exposure) %>%
+  ieugwasr::ld_clump(
+    dat = .,
+    clump_kb = 10000,
+    clump_r2 = 0.001,
+    clump_p = 0.99,
+    bfile = '/wynton/group/andrews/data/reference_panels/EUR_All_Chr',
+    plink_bin = '/wynton/home/andrews/achatterjee/plink'
+  )
+
+comb_exp_independent <- comb_exp %>% filter(SNP %in% clump_comb_exp$rsid)
+```
+
+#Write exposure as a dataset
+```{r}
+write_tsv(comb_exp_independent, "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/Harmonized_Datasets/combined_exp_gupta_platelets_nalls.tsv.gz")
 ```
 
 #Extract exposure SNPs from outcome
 ```{r}
 # extract exposure SNPs present in outcome
 outcome_clump <- semi_join(
-  outcome_AD_Format_kunkle, comb_exp_independent, by = "SNP"
+  outcome_AD_Format_Nalls, comb_exp_independent, by = "SNP"
 )
 
 # Exposure SNPs not present in outomce
 outcome_wo_snps <- anti_join(
-  comb_exp_independent, outcome_AD_Format_kunkle, by = "SNP"
+  comb_exp_independent, outcome_AD_Format_Nalls, by = "SNP"
 ) %>%
-  distinct(SNP) #13 SNPs
+  distinct(SNP) #224 SNPs
 ```
 
 #LD proxy SNP for outcome
@@ -381,12 +386,11 @@ LDproxy_batch(outcome_wo_snps$SNP,
         token = 'a6deee62cc4a', 
         append = TRUE,
         genome_build = "grch37")
-system("mv combined_query_snp_list_grch37.txt exposure_outcome_proxy_snps_chong_plate_kunkle.txt")
+system("mv combined_query_snp_list_grch37.txt exposure_outcome_proxy_snps_gupta_platelet_nalls_Aadrita.txt")
 
 # Munge proxy snp file
-outcome_dat <- munge_proxies("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/proxy_snps/exposure_outcome_proxy_snps_chong_plate_kunkle.txt", outcome_AD_Format_kunkle, outcome_clump)
+outcome_dat <- munge_proxies("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/proxy_snps/exposure_outcome_proxy_snps_gupta_platelet_kunkle_Aadrita.txt", outcome_AD_Format_Nalls, outcome_clump)
 ```
-
 #Harmonize
 ```{r}
 # Univariate MR 
@@ -396,24 +400,22 @@ mrdat <- harmonise_data(comb_exp_independent, outcome_dat) %>%
 
 ## MVMR
 mvdat <- mv_harmonise_data(comb_exp_independent, outcome_dat)
-
 ```
 
 #export 
 ```{r}
-write_rds(mvdat, 'harmonized_chong_plate_kunkle_mvmr.rds')
+write_rds(mvdat, '/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/Harmonized_Datasets/harmonized_gupta_platelet_nalls_mvmr.rds')
 ```
 
 #Read in mvdat
 ```{r}
-mvdat <- read_rds('/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/Harmonized_Datasets/harmonized_longchamps_plate_kunkle_mvmr.rds')
+mvdat <- read_rds('/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/Harmonized_Datasets/harmonized_gupta_platelet_bellenguez_mvmr.rds')
 ```
 
 #Using TwoSample MR package
 ```{r}
 mvmr_res <- mv_multiple(mvdat, plots = F)
 ```
-
 
 #Using MVMR package
 ```{r}
@@ -425,7 +427,7 @@ mvmr_dat <- cbind(mvdat$exposure_beta,
                  ) %>%
   as.data.frame() 
 
-colnames(mvmr_dat) <- c("IiFFho_beta", "oEdjcb_beta", "IiFFho_se", "oEdjcb_se", "outcome_beta", "outcome_se")
+colnames(mvmr_dat) <- c("051USY_beta", "AM17AH_beta", "051USY_se", "AM17AH_se", "outcome_beta", "outcome_se") ## Rename columns
 
 mvmr_dat <- mvmr_dat %>% rownames_to_column() %>% 
       as.matrix()
@@ -446,8 +448,8 @@ mvmr_out <- res_mvmr %>%
     janitor::clean_names() %>%
     rename(exposure = rowname, b = estimate, se = std_error, p = pr_t) %>%
     mutate(
-      exposure = ifelse(exposure == 'exposure1', 'mtDNA_chong', 'Platlet_cn'), 
-      outcome = 'AD',
+      exposure = ifelse(exposure == 'exposure1', 'mtDNA_gupta', 'Platlet_cn'), 
+      outcome = 'Nalls PD',
       method = 'IVW-MVMR'
     ) %>%
     relocate(outcome, method, .after = exposure)
@@ -456,7 +458,6 @@ mvmr_out <- res_mvmr %>%
 sres <- strength_mvmr(r_input = F.data, gencov = 0)
 pres <- pleiotropy_mvmr(r_input = F.data, gencov = 0)
 ```
-
 #Radial MVMR
 ```{r}
 F.data_rmvmr <- format_rmvmr(BXGs = mvmr_dat[,c(2,3)],
@@ -483,8 +484,8 @@ MRMVInputObject <- MendelianRandomization::mr_mvinput(
   by = mvdat$outcome_beta,
   byse = mvdat$outcome_se,
   snps = rownames(mvdat$exposure_beta), 
-  exposure = c('mtDNAcn_chong', 'Platelet_cn'), 
-  outcome = 'AD'
+  exposure = c('mtDNAcn_gupta', 'Platelet_cn'), 
+  outcome = 'Nalls PD'
   )
 
 #IVW
@@ -528,8 +529,8 @@ MRMV_wbe_res <- MVMRmode::mv_mrmode(Bout = mvdat$outcome_beta,
 
 MRMV_wbe_df <- as_tibble(MRMV_wbe_res) %>%
   dplyr::rename(b = Estimate, p = Pvalue, se= StdError, lower_bound= CILower, upper_bound= CIUpper) %>%
-  mutate(Exposure = c("mtDNAcn_chong", "Platelet_cn"), 
-         Outcome = "AD", 
+  mutate(Exposure = c("mtDNAcn_gupta", "Platelet_cn"), 
+         Outcome = "Nalls PD", 
          method = 'Weighted mode',
          or= exp(b)) %>%
   # mutate_if(is.double, as.character) %>% 
@@ -547,5 +548,5 @@ ci <- combined_df %>%
   filter(Exposure != "Platelet_cn")
 
 #Export 
-write_csv(ci, "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/results/Aadrita_results/mvmr_results/chong_kunkle.csv")
+write_csv(ci, "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/results/Aadrita_results/mvmr_results/gupta_nalls.csv")
 ```

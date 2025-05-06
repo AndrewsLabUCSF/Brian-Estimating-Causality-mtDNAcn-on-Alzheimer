@@ -537,5 +537,9 @@ combined_df <- bind_rows(MRMV_wme_df, MRMV_egger_df, MRMV_ivw_df)
 ci <- combined_df %>% 
   mutate(b= as.numeric(b), se= as.numeric(se), p= as.numeric(p)) %>% 
   mutate(or= exp(b)) %>% 
-  mutate(lower_bound= exp(b - 1.96 * se), upper_bound= exp(b + 1.96 * se))
+  mutate(lower_bound= exp(b - 1.96 * se), upper_bound= exp(b + 1.96 * se)) %>% 
+  filter(Exposure != "Platelet_cn")
+
+#Export 
+write_csv(ci, "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/results/Aadrita_results/mvmr_results/chong_bellenguez.csv")
 ```
