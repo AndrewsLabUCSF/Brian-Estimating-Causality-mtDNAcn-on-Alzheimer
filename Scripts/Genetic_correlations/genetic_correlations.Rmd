@@ -1,0 +1,184 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+#Packages
+```{r}
+#install.packages("devtools")
+library(devtools)
+#install_github("GenomicSEM/GenomicSEM")
+require(GenomicSEM)
+#install.packages("reshape2")
+library(reshape2)
+#install.packages("dplyr")
+#devtools::install_github("mkanai/corrplot")
+
+library(tidyverse) # Data wrangling 
+
+library(cowplot)
+
+library(ggman)
+
+library(phenoscanner)
+
+library(janitor)
+```
+
+#Format
+```{r}
+#Gupta (and switch alleles)
+gupta_genetic_cor <- read_tsv("/wynton/group/andrews/data/summary_stats/results/Gupta2023mtDNAcn.tsv") %>% 
+  mutate(N = 163372) %>% 
+  rename(DBSNP_ID = SNP, AF = FRQ)
+
+temp_A1 <- gupta_genetic_cor$A1
+gupta_genetic_cor$A1 <- gupta_genetic_cor$A2
+gupta_genetic_cor$A2 <- temp_A1
+
+#write_tsv(gupta_genetic_cor, "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/Gupta2023mtDNAcn_with_N.tsv")
+
+#Nalls
+nalls_genetic_cor <- read_tsv("/wynton/group/andrews/data/summary_stats/results/Nalls2019_PD.tsv") %>% 
+  mutate(N = 1460059) %>% 
+  dplyr::rename(DBSNP_ID = SNP, AF = FRQ)
+
+#write_tsv(nalls_genetic_cor, "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/Nalls2019_PD_with_N.tsv")
+```
+
+
+#Munge GWAS SumStats
+```{r}
+## Summary statistics 
+Hagg_mtDNAcn = "/wynton/group/andrews/data/summary_stats/results/Hagg2020mtdnacn.chrall.CPRA_b37.tsv.gz"
+Longchamps_mtDNAcn = "/wynton/group/andrews/data/summary_stats/results/Longchamps2021mtdnacn.chrall.CPRA_b37.tsv.gz"
+Gupta_mtDNAcn= "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/genetic_correlations/Gupta2023mtDNAcn_with_N.tsv"
+Chong_mtDNAcn = "/wynton/group/andrews/data/summary_stats/results/Chong2022mtdnacn_eur.chrall.CPRA_b37.tsv"
+AD_Kunkle = "/wynton/group/andrews/data/summary_stats/results/Kunkle2019load_stage123.chrall.CPRA_b37.tsv.gz"
+AD_Bellenguez = "/wynton/group/andrews/data/summary_stats/results/Bellenguez2022load.chrall.CPRA_b37.tsv.gz"
+PD_Nalls = "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/genetic_correlations/Nalls2019_PD_with_N.tsv"
+
+## LD Structure 
+ld_path = "/wynton/group/andrews/data/eur_w_ld_chr/"
+
+## HAPMAP3 SNPs
+hm3_path = "/wynton/group/andrews/data/w_hm3.snplist"
+
+GenomicSEM::munge(
+  files = c(Hagg_mtDNAcn, Longchamps_mtDNAcn, Gupta_mtDNAcn, Chong_mtDNAcn, AD_Kunkle, AD_Bellenguez, PD_Nalls), 
+  hm3 = hm3_path, 
+  trait.names = c("Hagg_mtDNAcn", "Longchamps_mtDNAcn", "Gupta_mtDNAcn", "Chong_mtDNAcn", "AD_Kunkle", "AD_Bellenguez", "PD_Nalls"), 
+  maf.filter = 0.05, 
+  column.names = list(
+    SNP='DBSNP_ID', 
+    MAF='AF', 
+    A1='ALT',
+    A2='REF', 
+    effect='BETA', 
+    N = "N"
+  ), 
+  overwrite=FALSE
+)
+```
+
+#LDSC
+```{r}
+ldsc.covstruct <- GenomicSEM::ldsc(
+     traits = c("Hagg_mtDNAcn.sumstats.gz", "Longchamps_mtDNAcn.sumstats.gz", "Gupta_mtDNAcn.sumstats.gz", "Chong_mtDNAcn.sumstats.gz", "AD_Kunkle.sumstats.gz", "AD_Bellenguez.sumstats.gz", "PD_Nalls.sumstats.gz"),
+     trait.names = c("Hagg_mtDNAcn", "Longchamps_mtDNAcn", "Gupta_mtDNAcn", "Chong_mtDNAcn", "AD_Kunkle", "AD_Bellenguez", "PD_Nalls"), 
+     sample.prev = c(NA, NA, NA, NA, 0.37, 0.14, 0.038),
+     population.prev = c(NA, NA, NA, NA, 0.31, 0.31, 0.03),
+     ld = ld_path, 
+     wld = ld_path,
+     stand = TRUE
+     )
+
+#save(ldsc.covstruct, file="LDSC.RData")
+```
+
+#Genetic correlation matrix
+```{r}
+covmatrix<-ldsc.covstruct$S
+cormat <-round(cov2cor(ldsc.covstruct$S),digits=2) 
+
+#cormat_dataframe <- as.data.frame(cormat)
+
+
+#Changing row names
+custom_row_names <- c("Hagg_mtDNAcn", "Longchamps_mtDNAcn", "Gupta_mtDNAcn", "Chong_mtDNAcn", "AD_Kunkle", "AD_Bellenguez", "PD_Nalls")
+rownames(cormat) <- custom_row_names
+
+#Melt
+melted_cormat <- melt(covmatrix)
+
+#Visualize
+ggplot(data = melted_cormat, aes(x=Var1, y=Var2, fill=value)) + 
+  geom_tile()
+
+```
+##Get the lower and upper triangles of the correlation matrix
+```{r}
+# Get lower triangle of the correlation matrix
+  get_lower_tri<-function(cormat){
+    cormat[upper.tri(cormat)] <- NA
+    return(cormat)
+  }
+  # Get upper triangle of the correlation matrix
+  get_upper_tri <- function(cormat){
+    cormat[lower.tri(cormat)]<- NA
+    return(cormat)
+  }
+  
+upper_tri <- get_upper_tri(cormat)
+upper_tri
+
+# Melt the correlation matrix
+library(reshape2)
+melted_cormat <- melt(upper_tri, na.rm = TRUE)
+
+# Heatmap
+library(ggplot2)
+ggplot(data = melted_cormat, aes(Var2, Var1, fill = value))+
+ geom_tile(color = "white")+
+ scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+   midpoint = 0, limit = c(-1,1), space = "Lab", 
+   name="Pearson\nCorrelation") +
+  theme_minimal()+ 
+ theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+    size = 12, hjust = 1))+
+ coord_fixed()
+```
+
+##Reorder the correlation matrix
+```{r}
+reorder_cormat <- function(cormat){
+# Use correlation between variables as distance
+dd <- as.dist((1-cormat)/2)
+hc <- hclust(dd)
+cormat <-cormat[hc$order, hc$order]
+}
+
+# Reorder the correlation matrix
+cormat <- reorder_cormat(cormat)
+upper_tri <- get_upper_tri(cormat)
+
+# Melt the correlation matrix
+melted_cormat <- melt(upper_tri, na.rm = TRUE)
+
+# Create a ggheatmap
+ggheatmap <- ggplot(melted_cormat, aes(Var2, Var1, fill = value))+
+ geom_tile(color = "white")+
+ scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+   midpoint = 0, limit = c(-1,1), space = "Lab", 
+    name="Pearson\nCorrelation") +
+  theme_minimal()+ # minimal theme
+ theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+    size = 12, hjust = 1))+
+ coord_fixed()
+
+# Print the heatmap
+print(ggheatmap)
+
+#Save the heatmap
+ggsave('/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/genetic_correlations/genetic_cor_matrix.png', ggheatmap, units = 'in', height = 6, width = 6)
+```
