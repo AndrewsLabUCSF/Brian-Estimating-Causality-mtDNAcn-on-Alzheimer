@@ -1,0 +1,5 @@
+id.exposure,id.outcome,outcome,exposure,method,nsnp,b,se,pval
+KsZ1Oc,2RBpzn,outcome,mtDNAcn__all,Inverse variance weighted (fixed effects),62,0.10795708610900558,0.09378244102824995,0.24967303490587026
+KsZ1Oc,2RBpzn,outcome,mtDNAcn__all,MR Egger,62,0.16575558134941965,0.2537016073472633,0.5160275852949884
+KsZ1Oc,2RBpzn,outcome,mtDNAcn__all,Weighted median,62,0.07665059705164798,0.14835526003072738,0.6053870834928303
+KsZ1Oc,2RBpzn,outcome,mtDNAcn__all,Weighted mode,62,0.029092494756264742,0.18955762559660702,0.878529726139081
