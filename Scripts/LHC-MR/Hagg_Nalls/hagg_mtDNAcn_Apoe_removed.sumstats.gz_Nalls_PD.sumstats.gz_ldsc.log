@@ -1,0 +1,44 @@
+Multivariate ld-score regression of 2 traits (hagg_mtDNAcn_Apoe_removed.sumstats.gz Nalls_PD.sumstats.gz) began at: 2025-02-14 14:09:05.244653
+Reading in LD scores
+Read in summary statistics [1/2] from: hagg_mtDNAcn_Apoe_removed.sumstats.gz
+Out of 3606 SNPs, 3596 remain after merging with LD-score files
+Removing 0 SNPs with Chi^2 > 286.381; 3596 remain
+Read in summary statistics [2/2] from: Nalls_PD.sumstats.gz
+Out of 3606 SNPs, 3596 remain after merging with LD-score files
+Removing 0 SNPs with Chi^2 > 1460.059; 3596 remain
+          
+Estimating heritability [1/3] for: hagg_mtDNAcn_Apoe_removed.sumstats.gz
+Heritability Results for trait: hagg_mtDNAcn_Apoe_removed.sumstats.gz
+Mean Chi^2 across remaining SNPs: 1.217
+Lambda GC: 1.1083
+Intercept: 1.1169 (0.1648)
+Ratio: 0.5388 (0.7594)
+Total Observed Scale h2: 0.0141 (0.029)
+h2 Z: 0.485
+     
+Calculating genetic covariance [2/3] for traits: hagg_mtDNAcn_Apoe_removed.sumstats.gz and Nalls_PD.sumstats.gz
+3596 SNPs remain after merging hagg_mtDNAcn_Apoe_removed.sumstats.gz and Nalls_PD.sumstats.gz summary statistics
+Results for genetic covariance between: hagg_mtDNAcn_Apoe_removed.sumstats.gz and Nalls_PD.sumstats.gz
+Mean Z*Z: -0.0545
+Cross trait Intercept: -0.1337 (0.0494)
+Total Observed Scale Genetic Covariance (g_cov): 0.0069 (0.0041)
+g_cov Z: 1.68
+g_cov P-value: 0.093682
+          
+Estimating heritability [3/3] for: Nalls_PD.sumstats.gz
+Heritability Results for trait: Nalls_PD.sumstats.gz
+Mean Chi^2 across remaining SNPs: 1.4166
+Lambda GC: 1.2288
+Intercept: 0.8533 (0.0626)
+Ratio: -0.3521 (0.1503)
+Total Observed Scale h2: 0.0192 (0.0025)
+h2 Z: 7.6
+     
+      
+Genetic Correlation Results
+Genetic Correlation between hagg_mtDNAcn_Apoe_removed.sumstats.gz and Nalls_PD.sumstats.gz: 0.4175 (0.2491)
+     
+     
+LDSC finished running at 2025-02-14 14:09:15.812966
+Running LDSC for all files took 0 minutes and 10 seconds
+     

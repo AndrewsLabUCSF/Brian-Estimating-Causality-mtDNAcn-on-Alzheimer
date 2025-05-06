@@ -1,0 +1,145 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+## Libraries
+
+Loads the appropriate packages for MR analysis
+
+```{r setup, include=FALSE}
+library(readr)
+library(tidyverse) # Data wrangling 
+
+library (usethis)
+
+library(devtools)
+
+library(ggman)
+
+library(TwoSampleMR) # MR 
+
+library(R.utils) #To read in Gz data? 
+#For the read_outcome_data step
+
+library(RadialMR) # Radial MR sensitivity analysis 
+
+#library(phenoscanner)
+
+library(LDlinkR) # LD and proxy snps
+
+library(lhcMR)
+
+library(janitor)
+
+library(ieugwasr)
+
+devtools::install_github("albert-ying/lhcMR")
+
+#options(ieugwasr_api = 'gwas-api.mrcieu.ac.uk/')
+```
+
+
+## Importing and formatting Exposure
+
+This step imports our GWAS Exposure data sets and formats them up for MR analysis
+
+```{r}
+# Define column types for summary statistics GWAS
+coltypes = cols(
+  ID = col_character(),
+  CHROM = col_double(),
+  POS = col_double(),
+  REF = col_character(),
+  ALT = col_character(),
+  AF = col_double(),
+  TRAIT = col_character(),
+  BETA = col_double(),
+  SE = col_double(),
+  Z = col_double(),
+  P = col_double(),
+  N = col_double(),
+  OR = col_double(),
+  OR_L95 = col_double(),
+  OR_U95 = col_double(),
+  DIR = col_character(),
+  G1000_ID = col_character(),
+  G1000_VARIANT = col_character(),
+  DBSNP_ID = col_character(),
+  DBSNP_VARIANT = col_character(),
+  OLD_ID = col_character(),
+  OLD_VARIANT = col_character()
+)
+
+```
+
+## Step 1: Importing Exposure and Outcome Data
+```{r ld}
+## File paths needed for the analysis
+LD.filepath = "/wynton/group/andrews/data/LDscores_filtered.csv" # LD scores
+rho.filepath = "/wynton/group/andrews/data/LD_GM2_2prm.csv" # local/SNP-specific LD scores
+ld = "/wynton/group/andrews/data/eur_w_ld_chr/"
+hm3 = "/wynton/group/andrews/data/w_hm3.snplist"
+b_file = '/wynton/group/andrews/data/reference_panels/EUR_All_Chr'
+plink_path = '/wynton/home/andrews/achatterjee/plink'
+```
+
+## Exposure: Hagg
+
+```{r read_exposure_Hagg}
+exposure_path = "/wynton/group/andrews/data/summary_stats/results/Hagg2020mtdnacn.chrall.CPRA_b37.tsv.gz"
+exposure_ss_Hagg <- read_tsv(exposure_path, comment = "##", col_types = coltypes, 
+                        col_select = c(DBSNP_ID, CHROM, POS, REF, ALT, AF, BETA, SE, Z, P, N)) %>%
+  dplyr::rename(SNP = DBSNP_ID)
+                        
+```
+
+## Outcome: Kunkle AD
+```{r read_outcome_Kunkle}
+outcome_path = "/wynton/group/andrews/data/summary_stats/results/Kunkle2019load_stage123.chrall.CPRA_b37.tsv.gz"
+outcome_ss_Kunkle <- read_tsv(outcome_path, comment = "##",  col_types = coltypes, 
+                        col_select = c(DBSNP_ID, CHROM, POS, REF, ALT, AF, BETA, SE, Z, P, N))  %>%
+  dplyr::rename(SNP = DBSNP_ID)
+```
+
+#Filter APOE
+```{r}
+# For Exposure Hagg
+hagg_apoe <- filter(exposure_ss_Hagg , !(CHROM == 19 & between(POS, 44912079, 45912079)))
+
+# For Outcome Kunkle.
+kunkle_apoe <- filter(outcome_ss_Kunkle , !(CHROM == 19 & between(POS, 44912079, 45912079)))
+```
+
+## Merging Hagg and Kunkle datasets (X and Y) 
+```{r}
+## Step 1
+trait.names=c("hagg_mtDNAcn_Apoe_removed","Kunkle_AD")
+input.files = list(hagg_apoe, kunkle_apoe)
+
+df = merge_sumstats(input.files, trait.names, LD.filepath, rho.filepath)
+
+
+## Step 2: Calculating smart starting points for the likelihood optimisation
+#options(ieugwasr_api = 'gwas-api.mrcieu.ac.uk/')
+#ieugwasr::api_status()
+SP_list = calculate_SP(df,trait.names,run_ldsc=TRUE,run_MR=TRUE,hm3=hm3,ld="/wynton/group/andrews/data/eur_w_ld_chr/",nStep = 2,
+                       SP_single=3,SP_pair=50,SNP_filter=10, b_file = b_file, plink_path = plink_path)
+
+#Export SP_list to run on wynton as a job
+saveRDS(SP_list, "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/LHC-MR/Aadrita's_LHC-MR_analyses/LHC_MR_Hagg_Kunkle_apoe_removed/Hagg_Kunkle_SP_list.rds")
+```
+
+
+## Peform LHC-MR (on wynton)
+```{r}
+## Step 3: Running the likelihood optimisation to estimate the parameters, followed by a block-jackknife procedure to calculate parameter-SE
+SP_list <- readRDS("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/LHC-MR/Chong_Bellenguez_SP_list.rds")
+
+res_Chong_Bellenguez  = lhc_mr(SP_list, trait.names, paral_method="lapply", nCores = 1, nBlock=200)
+
+res_Chong_Bellenguez  %>% as_tibble() %>% write_csv(.,
+"/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/LHC-MR/lhcmr_Chong_Bellenguez_apoe_removed_Aadrita.csv")
+```
+
+

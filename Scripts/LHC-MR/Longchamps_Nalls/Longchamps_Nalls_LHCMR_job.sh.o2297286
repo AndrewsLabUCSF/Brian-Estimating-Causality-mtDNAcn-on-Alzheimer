@@ -1,0 +1,16 @@
+[1] "Running optimisation"
+Running optimisation[1] "Running block JK"
+Running block JK[1] "Error: 2-component normal mixture could not be fit on this data."
+[1] "Done!"
+                            piX          piY          h2X          h2Y
+Parameter estimates 4.29643e-05 7.847486e-05 2.898904e-02 1.281965e-02
+SE-JK                        NA           NA 4.312020e-03 1.445839e-03
+Pval                         NA           NA 1.782119e-11 7.542790e-19
+                            tX         tY        axy         ayx          iXY
+Parameter estimates 0.04487828 0.01918364 0.08381298 0.157955504 -0.035393825
+SE-JK               0.03274287 0.01934268 0.03730351 0.059332222  0.012607453
+Pval                0.17049118 0.32130590 0.02465376 0.007762683  0.004994734
+                          iX       iY
+Parameter estimates 1.094031 1.086298
+SE-JK                     NA       NA
+Pval                      NA       NA
