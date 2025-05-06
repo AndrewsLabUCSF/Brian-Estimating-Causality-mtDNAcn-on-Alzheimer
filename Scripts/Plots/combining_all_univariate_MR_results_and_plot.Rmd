@@ -1,0 +1,107 @@
+---
+title: "R Notebook"
+output: html_notebook
+editor_options: 
+  chunk_output_type: console
+---
+
+#Combine all univariate MR results
+```{r}
+# Set path to your folder
+folder_path <- "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/results/Aadrita_results/univariate_mr_results"
+
+# List all CSV files in the folder
+csv_files <- list.files(path = folder_path, pattern = "\\.csv$", full.names = TRUE)
+
+# Read and combine all CSVs
+combined_df <- purrr::map_dfr(csv_files, read_csv)
+
+# Check result
+glimpse(combined_df)
+```
+
+#Clean dataframe
+```{r}
+combined_df_clean <- combined_df %>%
+  select(-id.exposure, -id.outcome, -nsnp) %>% 
+  filter(method %in% c(
+    "Inverse variance weighted (fixed effects)",
+    "MR Egger",
+    "Weighted median",
+    "Weighted mode"
+  )) %>% 
+  mutate(exposure = str_replace(exposure, "^mtDNA_", "")) %>% 
+  mutate(outcome = str_replace(outcome, "nalls_PD", "nalls"))
+
+# Check the result
+head(combined_df_clean)
+
+write_tsv(combined_df_clean, "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/results/Aadrita_results/combined_univariate_results.tsv")
+```
+
+# Calculate ORs 
+```{r}
+odds_ratios <- combined_df_clean %>%
+  mutate(
+    OR = exp(b),
+    OR_lci95 = exp(b - 1.96 * se),
+    OR_uci95 = exp(b + 1.96 * se),
+    pval = pval
+  ) 
+
+```
+
+#Rename stuff
+```{r}
+odds_ratios <- odds_ratios %>% 
+  mutate(
+    exposure = tools::toTitleCase(exposure),
+    outcome = tools::toTitleCase(outcome)) %>% 
+  mutate(
+    method = gsub("Inverse variance weighted \\(fixed effects\\)", "IVW", method)
+  ) %>% 
+  mutate(
+    outcome = recode(outcome,
+                     "Bellenguez" = "AD/dementia",
+                     "Kunkle" = "AD",
+                     "Nalls" = "PD")
+  )
+```
+
+
+#Plot
+```{r}
+or_plot <- ggplot(odds_ratios, aes(
+  y = method,
+  x = OR,
+  xmin = OR_lci95,
+  xmax = OR_uci95,
+  color = exposure
+)) +
+  geom_pointrange(position = position_dodge(width = 0.5)) +  # dodges to separate lines
+  facet_wrap(~outcome) +
+  geom_vline(xintercept = 1, linetype = 2) +
+  labs(
+    title = "Univariate MR results for mtDNAcn onto AD and PD",
+    x = "Odds Ratio (95% CI)",
+    y = "Method",
+    color = "Exposure"
+  ) +
+  theme_bw() +
+  theme(
+    text = element_text(size = 10),
+    axis.ticks = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(hjust = 0.5),
+    strip.text = element_text(face = "bold")
+  ) +
+  scale_color_brewer(palette = "Set1") +
+  scale_y_discrete(limits = rev)
+
+or_plot
+
+
+#ggsave("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/results/Aadrita_results/plots/univariate_mr_results_mtdnacn_onto_ad_pd.png", or_plot, units = "in", width = 6, height = 4, dpi = 300)
+
+```
