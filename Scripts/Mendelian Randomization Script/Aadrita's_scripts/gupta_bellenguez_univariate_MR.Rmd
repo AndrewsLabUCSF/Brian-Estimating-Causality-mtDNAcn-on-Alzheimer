@@ -1,0 +1,391 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+## Libraries
+
+Loads the appropriate packages for MR analysis
+
+``` {r eval=FALSE}
+library(tidyverse) # Data wrangling 
+
+library(cowplot)
+
+library(ggman)
+
+library(TwoSampleMR) # MR 
+
+library(RadialMR) # Radial MR sensitivity analysis 
+
+library(phenoscanner)
+
+library(LDlinkR) # LD and proxy snps
+
+library(janitor)
+
+library(MVMR)         # Multivarble MR
+
+library(RMVMR)
+
+library(MendelianRandomization)
+
+library(MVMRmode)
+
+library(dplyr)
+library(readr)
+library(MungeSumstats)
+library(purrr)
+
+#MVMR Munge proxies
+source("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/Scripts/Functions/mvmr_munge_proxies.R")
+
+#Munge proxies
+source("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/Scripts/Functions/munge_proxies.R")
+
+# Define column types for summary statistics (MDNA and AD GWAS)
+coltypes = cols(
+  ID = col_character(),
+  CHROM = col_double(),
+  POS = col_double(),
+  REF = col_character(),
+  ALT = col_character(),
+  AF = col_double(),
+  TRAIT = col_character(),
+  BETA = col_double(),
+  SE = col_double(),
+  Z = col_double(),
+  P = col_double(),
+  N = col_double(),
+  OR = col_double(),
+  OR_L95 = col_double(),
+  OR_U95 = col_double(),
+  DIR = col_character(),
+  G1000_ID = col_character(),
+  G1000_VARIANT = col_character(),
+  DBSNP_ID = col_character(),
+  DBSNP_VARIANT = col_character(),
+  OLD_ID = col_character(),
+  OLD_VARIANT = col_character()
+)
+
+`%nin%` = negate(`%in%`)
+
+```
+
+#Do mungesumstats by chromosome for Gupta GWAS
+```{r}
+#Load in Gupta
+exposure_path_gupta = "/wynton/group/andrews/data/summary_stats/resources/gwas/Gupta2023/Gupta2023_mtdnacn_raw.tsv.gz"
+mtDNAcn_gupta <- read_tsv(exposure_path_gupta,comment="#")
+
+# Rename columns
+mtDNAcn_gupta_new <- mtDNAcn_gupta %>% 
+  dplyr::rename("CHR" = "chromosome",
+                "BP" = "base_pair_location")
+
+# Debugging: Check first few rows
+cat("Renamed columns:\n")
+print(colnames(mtDNAcn_gupta_new))
+print(head(mtDNAcn_gupta_new))
+
+# Filter and split dataset by chromosome (excluding sex chromosomes)
+chromosome_groups <- mtDNAcn_gupta_new %>%
+  filter(!(CHR %in% c("X", "Y"))) %>%  
+  group_split(CHR)
+
+# Define a function to process and save each chromosome
+process_chromosome <- function(data_chunk) {
+  chrom <- unique(data_chunk$CHR)  # Get chromosome number
+  cat("Processing chromosome:", chrom, "\n")
+  
+  # Format the chromosome-specific data
+  formatted_chunk <- MungeSumstats::format_sumstats(
+    data_chunk, 
+    ref_genome = "GRCh37",
+    return_data = TRUE
+  ) %>%
+    as_tibble()
+  
+  # Save output immediately
+  output_file <- paste0("processed_mtDNAcn_chr", chrom, ".tsv")
+  write_tsv(formatted_chunk, file = output_file)
+  
+  cat("Saved:", output_file, "\n")
+  
+  return(formatted_chunk)
+}
+
+#Reload processed chunks and combine 
+# Define the full path to the processed chunks folder
+processed_folder <- "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/other/processed_chunks"
+
+# Get a list of all processed chromosome files
+processed_files <- list.files(path = processed_folder, pattern = "processed_mtDNAcn_chr.*\\.tsv$", full.names = TRUE)
+
+# Function to read TSV files with consistent column types
+read_with_types <- function(file) {
+  read_tsv(file, col_types = cols(
+    CHR  = col_character(),  # Ensure CHR is a character
+    BP   = col_double(),     # Ensure BP is numeric
+    BETA = col_double(),     # Ensure BETA is numeric
+    SE   = col_double(),     # Ensure SE is numeric
+    FRQ  = col_double(),     # Ensure FRQ is numeric
+    P    = col_double(),     # Ensure P is numeric
+    PVAL = col_double(),     # Ensure PVAL is numeric
+    SNP  = col_character(),  # Keep SNP as character
+    A1   = col_character(),  # Keep A1 as character
+    A2   = col_character(),  # Keep A2 as character
+    ID   = col_character()   # Keep ID as character
+  ), show_col_types = FALSE)
+}
+
+# Load and combine all processed chunks
+combined_mtDNAcn <- processed_files %>%
+  lapply(read_with_types) %>%
+  bind_rows()
+
+# Check the combined dataset
+print(dim(combined_mtDNAcn))  # Print dimensions
+print(head(combined_mtDNAcn)) # Preview first few rows
+```
+
+#Export Gupta GWAS
+```{r}
+write_tsv(combined_mtDNAcn, "/wynton/group/andrews/data/summary_stats/results/Gupta2023mtDNAcn.tsv")
+```
+
+
+## Exposure 1: Format Gupta mtDNAcn (start here)
+``` {r read_in_gupta}
+#Read in Gupta
+combined_mtDNAcn <- read_tsv("/wynton/group/andrews/data/summary_stats/results/Gupta2023mtDNAcn.tsv")
+
+#Format (switched alleles)
+Format_mtDNAcn_gupta <- combined_mtDNAcn %>%   
+  format_data(.,
+              snps = NULL,
+              header = TRUE,
+              snp_col = "SNP",
+              beta_col = "BETA",
+              se_col = "SE",
+              eaf_col = "FRQ",
+              phenotype_col = "TRAIT",
+              effect_allele_col = "A2",
+              other_allele_col = "A1",
+              pval_col = "P",
+              chr_col = "CHR",
+              pos_col = "BP",
+              log_pval = FALSE 
+   ) %>%
+  as_tibble()
+
+Format_mtDNAcn_gupta <- Format_mtDNAcn_gupta %>%
+mutate(exposure = "mtDNA_gupta")
+
+mtDNAcn_gupta_gws <- filter(Format_mtDNAcn_gupta, pval.exposure < 5e-8)
+
+
+#Clump locally
+mtDNAcn_clump_gupta <- mtDNAcn_gupta_gws %>% 
+  filter(pval.exposure < 1e-5) %>%
+  select(rsid = SNP, pval = pval.exposure) %>%
+  ieugwasr::ld_clump(
+    dat = .,
+    clump_kb = 10000,
+    clump_r2 = 0.001,
+    clump_p = 0.99,
+    bfile = '/wynton/group/andrews/data/reference_panels/EUR_All_Chr',
+    plink_bin = '/wynton/home/andrews/achatterjee/plink'
+  )
+
+#Append the SNPS to combined_mtDNAcn so we can get all the columns
+mtDNAcn_gupta_new <- filter(Format_mtDNAcn_gupta, SNP %in% mtDNAcn_clump_gupta$rsid)
+
+#Remove APOE region
+mtDNAcn_clump_gupta <- filter(mtDNAcn_gupta_new, !(chr.exposure == 19 & between(pos.exposure, 44912079, 45912079)))
+```
+
+
+## Outcome: Bellenguez
+```{r load in Bellenguez AD dataset}
+outcome_path_bellenguez = "/wynton/group/andrews/data/summary_stats/results/Bellenguez2022load.chrall.CPRA_b37.tsv.gz"
+
+# Import Code for outcome GWAS 
+OutcomeAD_Bellenguez <- read_tsv(outcome_path_bellenguez,comment="#")
+
+# Rename right-side variables to match column names of your GWAS dataset 
+outcome_AD_Format_Bellenguez <- OutcomeAD_Bellenguez %>%
+  format_data(.,
+    type = "outcome",
+    snps = NULL,
+    header = TRUE,
+    phenotype_col = "Phenotype",
+    snp_col = "DBSNP_ID",
+    beta_col = "BETA",
+    se_col = "SE",
+    eaf_col = "AF",
+    effect_allele_col = "ALT",
+    other_allele_col = "REF",
+    pval_col = "P",
+    samplesize_col = "N",
+    z_col = "Z",
+    chr_col = "CHROM",
+    pos_col = "POS",
+    log_pval = FALSE
+) %>%
+  as_tibble()
+
+outcome_AD_Format_Bellenguez <- outcome_AD_Format_Bellenguez %>%
+mutate(outcome = "bellenguez")
+```
+
+
+#LD proxy SNPs
+```{r}
+# extract gupta SNPs present in outcome
+outcome_clump <- semi_join(
+ outcome_AD_Format_Bellenguez, mtDNAcn_clump_gupta, by = "SNP"
+)
+
+# Hagg SNPs not present in outcome
+exp_snps_wo <- anti_join(
+  mtDNAcn_clump_gupta, outcome_AD_Format_Bellenguez, by = "SNP"
+) # 5 SNPs
+
+# Use LDLinkR to identify proxy snps
+LDproxy_batch(exp_snps_wo$SNP, 
+        pop = "CEU", 
+        r2d = "r2", 
+        token = 'a6deee62cc4a', 
+        append = TRUE,
+        genome_build = "grch37")
+system("mv combined_query_snp_list_grch37.txt exposure_outcome_proxy_snps_gupta_bellenguez_Aadrita.txt")
+
+# Munge proxy snp file
+outcome_dat <- munge_proxies("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/proxy_snps/exposure_outcome_proxy_snps_gupta_bellenguez_Aadrita.txt", outcome_AD_Format_Bellenguez, outcome_clump)
+```
+#Harmonise
+```{r}
+harmonised_data <- harmonise_data(mtDNAcn_clump_gupta, outcome_dat, action = 2) %>% as_tibble() %>%
+#  mutate(
+#    apoe_region = case_when(
+#      chr.outcome == 19 & between(pos.outcome, 44912079, 45912079) ~ TRUE,
+#      TRUE ~ FALSE
+#    ), 
+#    gws.outcome = ifelse(pval.outcome < 5e-8, TRUE, FALSE), 
+#   mr_keep = ifelse(mr_keep == FALSE | apoe_region == TRUE | gws.outcome == TRUE, FALSE, TRUE)
+#  )
+  filter(pval.exposure < 5e-8)
+```
+
+#Export
+```{r}
+write_csv(harmonised_data, "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/Harmonized_Datasets/gupta_bellenguez_univariate_harmonised_data.csv")
+```
+
+#Import harmonised dataset
+```{r}
+harmonised_data <- read_csv("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/Harmonized_Datasets/gupta_bellenguez_univariate_harmonised_data.csv")
+```
+
+#MR
+```{r}
+mr_res <- mr(harmonised_data, method_list = c(
+  "mr_two_sample_ml",  "mr_egger_regression", "mr_weighted_median", 
+  "mr_ivw_fe", "mr_ivw_mre",
+  "mr_simple_mode", "mr_weighted_mode"
+  ))
+
+res_single <- mr_singlesnp(harmonised_data, all_method = c("mr_ivw_fe", "mr_egger_regression", "mr_weighted_median", "mr_weighted_mode")) %>% as_tibble()
+
+```
+
+##Sensitivity analyses
+```{r}
+mr_heterogeneity(harmonised_data)
+mr_pleiotropy_test(harmonised_data)
+```
+
+##Radial MR
+```{r}
+radial_dat <- harmonised_data %>% filter(mr_keep == T) %>% dat_to_RadialMR()
+radial_res <- ivw_radial(radial_dat$mtDNA_gupta.bellenguez, alpha = 0.05/nrow(radial_dat$mtDNA_gupta.bellenguez)) #significant outliers
+```
+
+##Radial MR (outliers detected)
+```{r}
+radial_dat <- harmonised_data %>% filter(mr_keep == T) %>% dat_to_RadialMR()
+rmr_dat <- radial_dat$mtDNA_gupta.bellenguez
+
+# Run Radial MR
+bonff = 0.05/nrow(rmr_dat) # Bonferonni Correction
+radial_ivw_res <- ivw_radial(rmr_dat, alpha = bonff) 
+
+radial_egger_res <- egger_radial(rmr_dat, alpha = bonff) 
+
+
+#Plot
+ivw_radial_p <- plot_radial(radial_ivw_res, radial_scale = F, show_outliers = F)
+egger_radial_p <- plot_radial(radial_egger_res, radial_scale = F, show_outliers = F)
+
+## Modify the mrkeep variable to flag variants as outliers from radial MR for removal
+mr_dat_outlier <- harmonised_data %>%
+  left_join(radial_ivw_res$dat) %>%
+  mutate(
+     mr_keep = case_when(
+       Outliers == "Outlier" ~ FALSE, 
+       TRUE ~ mr_keep
+     )
+  )
+
+## MR analysis 
+mr_res_outlier <- mr(mr_dat_outlier, method_list = c("mr_ivw_fe", "mr_egger_regression", "mr_weighted_median", "mr_weighted_mode"))
+
+# Heterogeneity statistics 
+mr_het_outlier <- mr_heterogeneity(mr_dat_outlier, method_list = c("mr_egger_regression", "mr_ivw")) 
+
+# Horizontal pleitropy
+mr_plt_outlier <- mr_pleiotropy_test(mr_dat_outlier)
+
+# Radial MR 
+radial_dat_outlier <- mr_dat_outlier %>% filter(mr_keep == T) %>% dat_to_RadialMR()
+radial_res_outlier <- ivw_radial(radial_dat_outlier$mtDNA_gupta.bellenguez, alpha = 0.05/nrow(radial_dat_outlier$mtDNA_gupta.bellenguez)) 
+```
+
+#Save MR results
+```{r}
+write_csv(mr_res_outlier, "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/results/Aadrita_results/univariate_mr_results/gupta_bellenguez.csv")
+```
+
+
+#MRLap (didn't do this)
+```{r}
+#remotes::install_github("n-mounier/MRlap")
+library(MRlap)
+
+#Reformatting exposure
+reformat_mtDNAcn_gupta <- combined_mtDNAcn %>% 
+  dplyr::rename(rsid = "SNP", chr = "CHR")
+
+#Reformatting outcome (use total sample size instead of effective)
+outcome <- OutcomeAD_Bellenguez %>% 
+  dplyr::rename(rs = DBSNP_ID, chr = CHROM) %>% 
+  select(-OR) %>% 
+  filter(rs != 'rs429358')
+
+mrlap <- MRlap(exposure = reformat_mtDNAcn_gupta,
+               exposure_name = "exposure",
+               outcome = outcome,
+               outcome_name = "outcome",
+               MR_pruning_dist = 10000,
+               MR_pruning_LD = 0.001,
+               ld = "/wynton/group/andrews/data/eur_w_ld_chr/",
+               hm3 = "/wynton/group/andrews/data/w_hm3.snplist")
+mrlap
+
+mrlap$MRcorrection$IVs
+
+filter(outcome, rs %in% mrlap$MRcorrection$IVs)
+
+```
