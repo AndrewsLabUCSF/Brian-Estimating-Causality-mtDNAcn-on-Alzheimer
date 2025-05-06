@@ -1,0 +1,8 @@
+id.exposure,id.outcome,outcome,exposure,method,nsnp,b,se,pval
+a1X8dh,Zceh1F,kunkle,mtDNA_chong,Maximum likelihood,62,0.10967177652377418,0.09449504044799455,0.24580102069172521
+a1X8dh,Zceh1F,kunkle,mtDNA_chong,MR Egger,62,0.16575558134941965,0.2537016073472633,0.5160275852949884
+a1X8dh,Zceh1F,kunkle,mtDNA_chong,Weighted median,62,0.07665059705164798,0.14638841154709842,0.6005490602108604
+a1X8dh,Zceh1F,kunkle,mtDNA_chong,Inverse variance weighted (fixed effects),62,0.1079570861090055,0.09378244102824991,0.24967303490587037
+a1X8dh,Zceh1F,kunkle,mtDNA_chong,Inverse variance weighted (multiplicative random effects),62,0.1079570861090055,0.11080132648148293,0.3298925806514255
+a1X8dh,Zceh1F,kunkle,mtDNA_chong,Simple mode,62,0.0683443005024107,0.28791301341951664,0.8131587824927432
+a1X8dh,Zceh1F,kunkle,mtDNA_chong,Weighted mode,62,0.029092494756264742,0.20168196801957175,0.8857790842226602
