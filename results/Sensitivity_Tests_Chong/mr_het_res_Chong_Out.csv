@@ -1,3 +1,0 @@
-id.exposure,id.outcome,outcome,exposure,method,Q,Q_df,Q_pval
-KsZ1Oc,2RBpzn,outcome,mtDNAcn__all,MR Egger,85.05718381449198,60,0.018380060565914354
-KsZ1Oc,2RBpzn,outcome,mtDNAcn__all,Inverse variance weighted,85.14843870398137,61,0.022273593087739334
