@@ -16,3 +16,7 @@ In system("timedatectl", intern = TRUE) :
   running command 'timedatectl' had status 1
 running mtDNAcn_Apoe_removedrunning Nalls_PD
 importing SP_list9
+completed LHC-MR
+Error: Cannot open file for writing:
+* '/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/LHC-MR/Aadrita's_LHC-MR_analyses/Chong_Nalls/Chong_Nalls_SP_list.rds/lhcmr_Chong_Nalls.csv'
+Execution halted
