@@ -29,35 +29,50 @@ odds_ratios <- lhc_mr_results %>%
     OR_lci95 = exp(beta - 1.96 * SE),
     OR_uci95 = exp(beta + 1.96 * SE),
     pval = `P-Value`
-  ) %>% 
-  mutate(Outcome = recode(Outcome,
+  ) %>%
+  mutate(
+    Outcome = recode(Outcome,
                      "Bellenguez" = "AD/dementia",
                      "Kunkle" = "AD",
-                     "Nalls" = "PD"))
+                     "Nalls" = "PD")
+  ) %>%
+  mutate(
+    pval_fdr = p.adjust(pval, method = "fdr")
+  )
+
 ```
 
 ##Plot 
 ```{r}
 or_plot <- ggplot(odds_ratios, aes(y = Exposure, x = OR, xmin = OR_lci95, xmax = OR_uci95)) +
-  geom_pointrange(aes(color = pval < 0.05)) +
-  facet_wrap(~Outcome) +
+  geom_pointrange(aes(color = pval_fdr < 0.05)) +
+  facet_wrap(~Outcome, scales = "free_x") +
   geom_vline(xintercept = 1, linetype = 2) +
-  labs(title = "LHC-MR Results for mtDNAcn onto AD and PD", x = "Odds Ratio (95% CI)", y = "Exposure") +
+  scale_x_continuous(
+  labels = function(x) gsub("\\.?0+$", "", format(x, digits = 2)),
+  expand = expansion(mult = c(0.15, 0.15))
+) +
+  labs(
+    title = "LHC-MR Results for mtDNAcn onto AD\nand PD",
+    x = "Odds Ratio (95% CI)", y = "Exposure"
+  ) +
   theme_bw() +
   theme(
-    text = element_text(size = 10),
+    text = element_text(size = 12),
     axis.ticks = element_blank(),
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
     plot.title = element_text(hjust = 0.5),
-    strip.text = element_text(face = "bold")
+    strip.text = element_text(face = "bold"),
+    strip.background = element_blank(),
+    legend.position = "none"
   ) +
-  scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black")) +
-  theme(legend.position = "none")
+  scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"))
 
 or_plot
 
-#ggsave("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/results/Aadrita_results/plots/OR_lhc-mr_forward_dir.png", or_plot, units = "in", width = 5, height = 4, dpi = 300) 
+
+#ggsave("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/results/Aadrita_results/plots/OR_lhc-mr_forward_dir.png", or_plot, units = "in", width = 6, height = 4, dpi = 300) 
 ```
 
 #REVERSE DIRECTION
@@ -66,37 +81,32 @@ or_plot
 lhc_mr_results <- read_csv("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/results/Aadrita_results/LHC-MR_reverse_direction_all_results.csv")
 ```
 
-##Make OR
+##Make CI (not using OR in reverse direction)
 ```{r}
-odds_ratios <- lhc_mr_results %>%
+lhc_mr_results_clean <- lhc_mr_results %>%
   mutate(
-    OR = exp(beta),
-    OR_lci95 = exp(beta - 1.96 * SE),
-    OR_uci95 = exp(beta + 1.96 * SE),
+    CI_lci95 = beta - 1.96 * SE,
+    CI_uci95 = beta + 1.96 * SE,
     pval = `P-Value`
-  ) %>% 
-  mutate(Exposure = recode(Exposure,
-                     "Bellenguez" = "AD/dementia",
-                     "Kunkle" = "AD",
-                     "Nalls" = "PD")) %>% 
-  na.omit()
+  )
 ```
 
 ##Plot 
 ```{r}
-or_plot <- ggplot(odds_ratios, aes(y = Exposure, x = OR, xmin = OR_lci95, xmax = OR_uci95)) +
+or_plot <- ggplot(lhc_mr_results_clean, aes(y = Exposure, x = beta, xmin = CI_lci95, xmax = CI_uci95)) +
   geom_pointrange(aes(color = pval < 0.05)) +
   facet_wrap(~Outcome) +
-  geom_vline(xintercept = 1, linetype = 2) +
-  labs(title = "LHC-MR Results for AD and PD onto mtDNAcn", x = "Odds Ratio (95% CI)", y = "Exposure") +
+  geom_vline(xintercept = 0, linetype = 2) +
+  labs(title = "LHC-MR Results for AD and PD\nonto mtDNAcn", x = "Odds Ratio (95% CI)", y = "Exposure") +
   theme_bw() +
   theme(
-    text = element_text(size = 10),
+    text = element_text(size = 12),
     axis.ticks = element_blank(),
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
     plot.title = element_text(hjust = 0.5),
-    strip.text = element_text(face = "bold")
+    strip.text = element_text(face = "bold"),
+    strip.background = element_blank()
   ) +
   scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black")) +
   theme(legend.position = "none")

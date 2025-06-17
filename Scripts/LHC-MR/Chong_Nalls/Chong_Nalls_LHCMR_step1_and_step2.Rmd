@@ -85,7 +85,7 @@ plink_path = '/wynton/home/andrews/achatterjee/plink'
 ## Exposure: Chong
 
 ```{r read_exposure_Chong}
-exposure_path = "/wynton/group/andrews/data/summary_stats/results/Chong2022mtdnacn_eur.chrall.CPRA_b37.tsv"
+exposure_path = "/wynton/group/andrews/data/summary_stats/results/Chong2022mtdnacn_eur.chrall.CPRA_b37.tsv.gz"
 exposure_ss_Chong <- read_tsv(exposure_path, comment = "##", col_types = coltypes, 
                         col_select = c(DBSNP_ID, CHROM, POS, REF, ALT, AF, BETA, SE, Z, P, N)) %>%
   dplyr::rename(SNP = DBSNP_ID)
@@ -93,15 +93,15 @@ exposure_ss_Chong <- read_tsv(exposure_path, comment = "##", col_types = coltype
 
 ## Outcome: Nalls PD
 ```{r read_outcome_Nalls}
-outcome_path = "/wynton/group/andrews/data/summary_stats/results/Nalls2019_PD.tsv"
+outcome_path = "/wynton/group/andrews/data/summary_stats/results/Nalls2019PD/Nalls2019PD.b37.chrall.tsv.gz"
 
-outcome_ss_Nalls <- read_tsv(outcome_path) %>% 
-  mutate(N = 1460059) %>% 
-  mutate(Z = BETA / SE) %>% 
-  dplyr::rename(DBSNP_ID = SNP, POS = BP, CHROM = CHR, ALT = A1, REF = A2, AF = FRQ)
-                             
-outcome_ss_Nalls <- outcome_ss_Nalls %>%
-  dplyr::select(DBSNP_ID, CHROM, POS, ALT, REF, AF, BETA, SE, Z, P, N) %>%
+outcome_ss_Nalls <- read_tsv(outcome_path) %>%
+  mutate(
+    N = 1460059,
+    Z = ES / SE, 
+    P = 10^(-LP)) %>%
+  dplyr::rename(CHROM = CHR, BETA = ES) %>% 
+  dplyr::select(DBSNP_ID, CHROM, POS, ALT, REF, AF, BETA, SE, Z, P, N) %>% 
   dplyr::rename(SNP = DBSNP_ID)
 ```
 
@@ -128,7 +128,7 @@ SP_list = calculate_SP(df,trait.names,run_ldsc=TRUE,run_MR=TRUE,hm3=hm3,ld="/wyn
                        SP_single=3,SP_pair=50,SNP_filter=10, b_file = b_file, plink_path = plink_path)
 
 #Export SP_list to run on wynton as a job
-saveRDS(SP_list, "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/LHC-MR/Aadrita's_LHC-MR_analyses/LHC_MR_Chong_Nalls/Chong_Nalls_SP_list.rds")
+saveRDS(SP_list, "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/LHC-MR/Aadrita's_LHC-MR_analyses/Chong_Nalls/Chong_Nalls_SP_list.rds")
 ```
 
 

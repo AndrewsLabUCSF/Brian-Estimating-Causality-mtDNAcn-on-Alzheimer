@@ -32,7 +32,11 @@ library(lhcMR)
 
 library(janitor)
 
+library(parallel)
+
+
 library(ieugwasr)
+
 
 #options(ieugwasr_api = 'gwas-api.mrcieu.ac.uk/')
 ```
@@ -93,15 +97,15 @@ exposure_ss_Longchamps <- read_tsv(exposure_path, comment = "##", col_types = co
 
 ## Outcome: Nalls PD
 ```{r read_outcome_Nalls}
-outcome_path = "/wynton/group/andrews/data/summary_stats/results/Nalls2019_PD.tsv"
+outcome_path = "/wynton/group/andrews/data/summary_stats/results/Nalls2019PD/Nalls2019PD.b37.chrall.tsv.gz"
 
-outcome_ss_Nalls <- read_tsv(outcome_path) %>% 
-  mutate(N = 1460059) %>% 
-  mutate(Z = BETA / SE) %>% 
-  dplyr::rename(DBSNP_ID = SNP, POS = BP, CHROM = CHR, ALT = A1, REF = A2, AF = FRQ)
-                             
-outcome_ss_Nalls <- outcome_ss_Nalls %>%
-  dplyr::select(DBSNP_ID, CHROM, POS, ALT, REF, AF, BETA, SE, Z, P, N) %>%
+outcome_ss_Nalls <- read_tsv(outcome_path) %>%
+  mutate(
+    N = 1460059,
+    Z = ES / SE, 
+    P = 10^(-LP)) %>%
+  dplyr::rename(CHROM = CHR, BETA = ES) %>% 
+  dplyr::select(DBSNP_ID, CHROM, POS, ALT, REF, AF, BETA, SE, Z, P, N) %>% 
   dplyr::rename(SNP = DBSNP_ID)
 ```
 
@@ -114,7 +118,7 @@ longchamps_apoe <- filter(exposure_ss_Longchamps , !(CHROM == 19 & between(POS, 
 nalls_apoe <- filter(outcome_ss_Nalls , !(CHROM == 19 & between(POS, 44912079, 45912079)))
 ```
 
-## Merging Longchamps and Bellenguez datasets (X and Y) 
+## Merging Longchamps and Nalls datasets (X and Y) 
 ```{r}
 ## Step 1
 trait.names=c("Longchamps_mtDNAcn_Apoe_removed","Nalls_PD")
@@ -125,11 +129,12 @@ df = merge_sumstats(input.files, trait.names, LD.filepath, rho.filepath)
 
 ## Step 2: Calculating smart starting points for the likelihood optimisation
 SP_list = calculate_SP(df,trait.names,run_ldsc=TRUE,run_MR=TRUE,hm3=hm3,ld="/wynton/group/andrews/data/eur_w_ld_chr/",nStep = 2,
-                       SP_single=3,SP_pair=50,SNP_filter=10, b_file = b_file, plink_path = plink_path)
+                       SP_single=3,SP_pair=50,SNP_filter=10, nCores = 1, b_file = b_file, plink_path = plink_path)
+
 
 
 #Export SP_list to run on wynton as a job
-saveRDS(SP_list, "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/LHC-MR/Aadrita's_LHC-MR_analyses/LHC_MR_Longchamps_Nalls/Longchamps_Nalls_SP_list.rds")
+saveRDS(SP_list, "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/LHC-MR/Aadrita's_LHC-MR_analyses/Longchamps_Nalls/Longchamps_Nalls_SP_list.rds")
 ```
 
 

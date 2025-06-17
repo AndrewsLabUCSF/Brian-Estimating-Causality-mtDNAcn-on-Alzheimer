@@ -1,0 +1,44 @@
+Multivariate ld-score regression of 2 traits (gupta_mtDNAcn_Apoe_removed.sumstats.gz Kunkle_AD.sumstats.gz) began at: 2025-02-18 10:34:01.366454
+Reading in LD scores
+Read in summary statistics [1/2] from: gupta_mtDNAcn_Apoe_removed.sumstats.gz
+Out of 37807 SNPs, 37578 remain after merging with LD-score files
+Removing 1 SNPs with Chi^2 > 163.372; 37577 remain
+Read in summary statistics [2/2] from: Kunkle_AD.sumstats.gz
+Out of 37807 SNPs, 37578 remain after merging with LD-score files
+Removing 0 SNPs with Chi^2 > 82.771; 37578 remain
+          
+Estimating heritability [1/3] for: gupta_mtDNAcn_Apoe_removed.sumstats.gz
+Heritability Results for trait: gupta_mtDNAcn_Apoe_removed.sumstats.gz
+Mean Chi^2 across remaining SNPs: 1.3047
+Lambda GC: 1.2045
+Intercept: 1.0141 (0.0252)
+Ratio: 0.0464 (0.0828)
+Total Observed Scale h2: 0.086 (0.0099)
+h2 Z: 8.68
+     
+Calculating genetic covariance [2/3] for traits: gupta_mtDNAcn_Apoe_removed.sumstats.gz and Kunkle_AD.sumstats.gz
+37577 SNPs remain after merging gupta_mtDNAcn_Apoe_removed.sumstats.gz and Kunkle_AD.sumstats.gz summary statistics
+Results for genetic covariance between: gupta_mtDNAcn_Apoe_removed.sumstats.gz and Kunkle_AD.sumstats.gz
+Mean Z*Z: -0.0072
+Cross trait Intercept: -0.0075 (0.0165)
+Total Observed Scale Genetic Covariance (g_cov): 0.0028 (0.0089)
+g_cov Z: 0.316
+g_cov P-value: 0.75233
+          
+Estimating heritability [3/3] for: Kunkle_AD.sumstats.gz
+Heritability Results for trait: Kunkle_AD.sumstats.gz
+Mean Chi^2 across remaining SNPs: 1.1026
+Lambda GC: 1.0802
+Intercept: 1.0265 (0.0226)
+Ratio: 0.2584 (0.2205)
+Total Observed Scale h2: 0.0545 (0.0186)
+h2 Z: 2.93
+     
+      
+Genetic Correlation Results
+Genetic Correlation between gupta_mtDNAcn_Apoe_removed.sumstats.gz and Kunkle_AD.sumstats.gz: 0.0411 (0.1302)
+     
+     
+LDSC finished running at 2025-02-18 10:34:15.689855
+Running LDSC for all files took 0 minutes and 14 seconds
+     

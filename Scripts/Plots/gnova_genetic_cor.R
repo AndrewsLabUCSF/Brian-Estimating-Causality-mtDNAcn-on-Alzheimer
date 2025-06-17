@@ -40,26 +40,26 @@ combined_df <- files %>%
 print(combined_df)
 
 # (Optional) Save it as a CSV
-#write_csv(combined_df, "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/genetic_correlations/gnova_genetic_correlations.csv")
+write_csv(combined_df, "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/genetic_correlations/gnova_genetic_correlations_new.csv")
 
-# Step 1: Clean up trait names (if necessary)
-combined_df_clean <- read_csv("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/genetic_correlations/gnova_genetic_correlations.csv") %>%
-  dplyr::rename(Pearson_correlation = corr_corrected) # <- Important: Rename `corr` to `Pearson_correlation`
+----#Had to edit in R#-----
 
-
-# Step 1: Recoding trait names (optional, based on your plotting preference)
-combined_df_clean <- combined_df_clean %>%
+#Import edited dataframe (edited outside R) and clean up trait names
+combined_df_clean <- read_csv("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/genetic_correlations/gnova_genetic_correlations_new.csv") %>%
+  dplyr::rename(Pearson_correlation = corr_corrected) %>%
   mutate(
     trait_1 = case_when(
       trait_1 == "Bellenguez" ~ "AD/dementia",
       trait_1 == "Kunkle" ~ "AD",
       trait_1 == "Nalls" ~ "PD",
+      trait_1 == "Guptaadjusted" ~ "Gupta", 
       TRUE ~ trait_1
     ),
     trait_2 = case_when(
       trait_2 == "Bellenguez" ~ "AD/dementia",
       trait_2 == "Kunkle" ~ "AD",
       trait_2 == "Nalls" ~ "PD",
+      trait_2 == "Guptaadjusted" ~ "Gupta",
       TRUE ~ trait_2
     )
   )
@@ -70,6 +70,7 @@ traits_order <- c("Hagg", "Longchamps", "Gupta", "Chong", "AD", "AD/dementia", "
 genetic_cor_dfp <- expand_grid(trait_1 = traits_order,
                                trait_2 = traits_order) %>%
   left_join(combined_df_clean, by = c("trait_1", "trait_2")) %>%
+  mutate(Pearson_correlation = if_else(trait_1 == "Gupta" | trait_2 == "Gupta", -Pearson_correlation, Pearson_correlation)) %>% #Flipped the alleles so have to flip the sign
   mutate(rg.p_cat = case_when(
     pvalue_corrected <= 0.05 ~ 1,
     pvalue_corrected <= 0.1 ~ 0.75,
@@ -77,19 +78,11 @@ genetic_cor_dfp <- expand_grid(trait_1 = traits_order,
     pvalue_corrected <= 1 ~ 0.25
   )) 
 
-----#Had to edit in R#-----
-
-#Import edited dataframe (edited outside R)
-genetic_cor_dfp <- read_tsv("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/genetic_correlations/gnova_genetic_cor_edited.tsv")
-
-# Define trait list based on your data
-traits <- c("Hagg", "Longchamps", "Chong", "Gupta", "Kunkle", "Bellenguez", "Nalls")
-
-# Step 3: Make sure trait order is correct
+# Make sure trait order is correct
 genetic_cor_dfp$trait_1 <- factor(genetic_cor_dfp$trait_1, levels = traits_order)
 genetic_cor_dfp$trait_2 <- factor(genetic_cor_dfp$trait_2, levels = traits_order)
 
-# Step 4: Plot
+# Plot
 the_palette = "RdBu"
 
 genetic_cor_plot <- ggplot(genetic_cor_dfp, aes(x = trait_1, y = trait_2, fill = Pearson_correlation, height = rg.p_cat, width = rg.p_cat)) +
@@ -104,13 +97,13 @@ genetic_cor_plot <- ggplot(genetic_cor_dfp, aes(x = trait_1, y = trait_2, fill =
     aspect.ratio = 1,
     axis.title.x = element_blank(),
     axis.title.y = element_blank(),
-    text = element_text(size = 8)
+    text = element_text(size = 12)
   )
 
 # Show the plot
 print(genetic_cor_plot)
 
 #Export
-ggsave("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/results/Aadrita_results/plots/gnova_genetic_cor_plot.png", genetic_cor_plot, units = "in", width = 6, height = 6, dpi = 300) 
+#ggsave("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/results/Aadrita_results/plots/gnova_genetic_cor_plot.png", genetic_cor_plot, units = "in", width = 4.3, height = 4.3, dpi = 300) 
 
 

@@ -89,12 +89,13 @@ or_plot <- ggplot(odds_ratios, aes(
   ) +
   theme_bw() +
   theme(
-    text = element_text(size = 10),
+    text = element_text(size = 12),
     axis.ticks = element_blank(),
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
     plot.title = element_text(hjust = 0.5),
-    strip.text = element_text(face = "bold")
+    strip.text = element_text(face = "bold"),
+    strip.background = element_blank()
   ) +
   scale_color_brewer(palette = "Set1") +
   scale_y_discrete(limits = rev)
@@ -102,6 +103,6 @@ or_plot <- ggplot(odds_ratios, aes(
 or_plot
 
 
-#ggsave("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/results/Aadrita_results/plots/univariate_mr_results_mtdnacn_onto_ad_pd.png", or_plot, units = "in", width = 6, height = 4, dpi = 300)
+#ggsave("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/results/Aadrita_results/plots/univariate_mr_results_mtdnacn_onto_ad_pd.png", or_plot, units = "in", width = 6.5, height = 4, dpi = 300)
 
 ```

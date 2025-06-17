@@ -73,7 +73,7 @@ coltypes = cols(
 
 ```
 
-#Do mungesumstats by chromosome for Gupta GWAS
+#Do mungesumstats by chromosome for Gupta GWAS (ignore)
 ```{r}
 #Load in Gupta
 exposure_path_gupta = "/wynton/group/andrews/data/summary_stats/resources/gwas/Gupta2023/Gupta2023_mtdnacn_raw.tsv.gz"
@@ -159,7 +159,7 @@ write_tsv(combined_mtDNAcn, "/wynton/group/andrews/data/summary_stats/results/Gu
 ## Exposure 1: Format Gupta mtDNAcn (start here)
 ``` {r read_in_gupta}
 #Read in Gupta
-combined_mtDNAcn <- read_tsv("/wynton/group/andrews/data/summary_stats/results/Gupta2023mtDNAcn.tsv")
+combined_mtDNAcn <- read_tsv("/wynton/group/andrews/data/summary_stats/results/Gupta2023mtDNAcn_adjusted.tsv")
 
 #Format (switched alleles)
 Format_mtDNAcn_gupta <- combined_mtDNAcn %>%   
@@ -251,7 +251,7 @@ outcome_clump <- semi_join(
 # Hagg SNPs not present in outcome
 exp_snps_wo <- anti_join(
   mtDNAcn_clump_gupta, outcome_AD_Format_Bellenguez, by = "SNP"
-) # 5 SNPs
+) # 1 SNPs
 
 # Use LDLinkR to identify proxy snps
 LDproxy_batch(exp_snps_wo$SNP, 

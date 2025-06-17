@@ -43,37 +43,41 @@ combined_df_clean <- combined_df %>%
 
 #Make names pretty
 ```{r}
-combined_df_clean <- combined_df_clean %>%
+combined_df_new <- combined_df_clean %>%
   mutate(
     Exposure = tools::toTitleCase(exposure),
-    outcome = tools::toTitleCase(outcome),
+    #outcome = tools::toTitleCase(outcome),
     method = gsub("Inverse variance weighted \\(fixed effects\\)", "IVW", method),
-    outcome = recode(outcome,
+    outcome = recode(Outcome,
                      "Bellenguez AD" = "AD/dementia",
                      "Kunkle AD" = "AD",
                      "Nalls PD" = "PD")
   ) %>% 
-  mutate(method = factor(method, levels = c("IVW", "Egger", "Weighted median")))
-
+  mutate(method = factor(method, levels = c("IVW", "Egger", "Weighted median"))) %>% 
+  filter(Exposure == "Hagg") #Filter just for Hagg
 
 #write_tsv(combined_df_clean, "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/results/Aadrita_results/combined_mvmr_results.tsv")
 ```
 
+#Read it in
+```{r}
+#combined_df_new <- read_tsv("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/results/Aadrita_results/combined_mvmr_results.tsv")
+```
+
+
 #Plot
 ```{r}
-or_plot <- ggplot(combined_df_clean, aes(
+or_plot <- ggplot(combined_df_new, aes(
   y = method,
   x = or,
   xmin = lower_bound,
-  xmax = upper_bound,
-  color = Exposure, 
-  alpha = p < 0.05
+  xmax = upper_bound
 )) +
   geom_pointrange(position = position_dodge(width = 0.5)) +
   facet_wrap(~outcome) +
-  geom_vline(xintercept = 1, linetype = 2) +
+  geom_vline(xintercept = 1, linetype = 2, color = "black") +
   labs(
-    title = "MVMR Odds Ratio",
+    title = "MVMR Odds Ratio for Hägg",
     x = "Odds Ratio (95% CI)",
     y = "Method",
     color = "Exposure"
@@ -82,18 +86,19 @@ or_plot <- ggplot(combined_df_clean, aes(
   guides(alpha = "none") + 
   theme_bw() +
   theme(
-    text = element_text(size = 10),
+    text = element_text(size = 12),
     axis.ticks = element_blank(),
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
     plot.title = element_text(hjust = 0.5),
-    strip.text = element_text(face = "bold")
+    strip.text = element_text(face = "bold"),
+    strip.background = element_blank()
   ) +
   scale_color_brewer(palette = "Set1") +
-  scale_y_discrete(limits = rev)
+  scale_y_discrete(limits = rev) 
 
 print(or_plot)
 
-#ggsave("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/results/Aadrita_results/plots/mvmr_results_mtdnacn_onto_ad_pd.png", or_plot, units = "in", width = 6, height = 4, dpi = 300)
+#ggsave("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/results/Aadrita_results/plots/mvmr_results_mtdnacn_onto_ad_pd.png", or_plot, units = "in", width = 6.7, height = 4, dpi = 300)
 ```
 

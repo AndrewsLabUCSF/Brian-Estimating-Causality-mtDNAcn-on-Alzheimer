@@ -1,0 +1,44 @@
+Multivariate ld-score regression of 2 traits (gupta_mtDNAcn_Apoe_removed.sumstats.gz Bellenguez_AD.sumstats.gz) began at: 2025-02-18 10:46:11.106339
+Reading in LD scores
+Read in summary statistics [1/2] from: gupta_mtDNAcn_Apoe_removed.sumstats.gz
+Out of 37717 SNPs, 37492 remain after merging with LD-score files
+Removing 1 SNPs with Chi^2 > 163.372; 37491 remain
+Read in summary statistics [2/2] from: Bellenguez_AD.sumstats.gz
+Out of 37717 SNPs, 37492 remain after merging with LD-score files
+Removing 0 SNPs with Chi^2 > 487.511; 37492 remain
+          
+Estimating heritability [1/3] for: gupta_mtDNAcn_Apoe_removed.sumstats.gz
+Heritability Results for trait: gupta_mtDNAcn_Apoe_removed.sumstats.gz
+Mean Chi^2 across remaining SNPs: 1.3049
+Lambda GC: 1.2174
+Intercept: 1.0507 (0.0252)
+Ratio: 0.1661 (0.0828)
+Total Observed Scale h2: 0.0742 (0.0103)
+h2 Z: 7.2
+     
+Calculating genetic covariance [2/3] for traits: gupta_mtDNAcn_Apoe_removed.sumstats.gz and Bellenguez_AD.sumstats.gz
+37491 SNPs remain after merging gupta_mtDNAcn_Apoe_removed.sumstats.gz and Bellenguez_AD.sumstats.gz summary statistics
+Results for genetic covariance between: gupta_mtDNAcn_Apoe_removed.sumstats.gz and Bellenguez_AD.sumstats.gz
+Mean Z*Z: -0.0113
+Cross trait Intercept: -0.0084 (0.0172)
+Total Observed Scale Genetic Covariance (g_cov): -1e-04 (0.0034)
+g_cov Z: -0.0271
+g_cov P-value: 0.97841
+          
+Estimating heritability [3/3] for: Bellenguez_AD.sumstats.gz
+Heritability Results for trait: Bellenguez_AD.sumstats.gz
+Mean Chi^2 across remaining SNPs: 1.2827
+Lambda GC: 1.1967
+Intercept: 1.053 (0.0253)
+Ratio: 0.1877 (0.0895)
+Total Observed Scale h2: 0.0227 (0.0034)
+h2 Z: 6.66
+     
+      
+Genetic Correlation Results
+Genetic Correlation between gupta_mtDNAcn_Apoe_removed.sumstats.gz and Bellenguez_AD.sumstats.gz: -0.0023 (0.0832)
+     
+     
+LDSC finished running at 2025-02-18 10:46:22.322009
+Running LDSC for all files took 0 minutes and 11 seconds
+     

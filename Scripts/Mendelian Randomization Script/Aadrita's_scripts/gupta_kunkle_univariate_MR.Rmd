@@ -76,7 +76,7 @@ coltypes = cols(
 ## Exposure 1: Format Gupta mtDNAcn 
 ``` {r read_in_gupta}
 #Read in Gupta
-mtDNAcn_gupta <- read_tsv("/wynton/group/andrews/data/summary_stats/results/Gupta2023mtDNAcn.tsv")
+mtDNAcn_gupta <- read_tsv("/wynton/group/andrews/data/summary_stats/results/Gupta2023mtDNAcn_adjusted.tsv")
 
 #Format (switched alleles)
 Format_mtDNAcn_gupta <- mtDNAcn_gupta %>%   
@@ -125,7 +125,7 @@ mtDNAcn_clump_gupta <- filter(mtDNAcn_gupta_new, !(chr.exposure == 19 & between(
 
 #Read in Kunkle AD
 ```{r}
-outcome_path_kunkle = "/wynton/group/andrews/data/summary_stats/results/Kunkle2019load_stage123.chrall.CPRA_b37.tsv.gz"
+outcome_path_kunkle = "/wynton/group/andrews/data/Summary_statistics/Kunkle2019load_stage123.chrall.CPRA_b37.tsv.gz"
 
 # Import Code for outcome GWAS 
 OutcomeAD_kunkle <- read_tsv(outcome_path_kunkle,comment="#")

@@ -167,7 +167,7 @@ outcome_clump <- semi_join(
 # Hagg SNPs not present in outcome
 exp_snps_wo <- anti_join(
   mtDNAcn_clump_gupta, outcome_AD_Format_Nalls, by = "SNP"
-) #62 SNPs
+) #38 SNPs
 
 # Use LDLinkR to identify proxy snps
 LDproxy_batch(exp_snps_wo$SNP, 
