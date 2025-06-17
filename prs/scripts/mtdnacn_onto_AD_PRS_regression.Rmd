@@ -1,0 +1,406 @@
+---
+title: "R Notebook"
+output: html_notebook
+editor_options: 
+  chunk_output_type: console
+---
+
+# Libraries
+```{r}
+ library(dplyr)
+library(readr)
+library(broom)
+library(ggplot2)
+library(tidyr)
+```
+
+#CHONG mtdnacn
+
+## Data Preparation
+```{r}
+fam_file <- "/wynton/group/andrews/users/rakshyasharma/PRS/PRS-CS-Auto/resources/ADGC/adgc.fam"
+covar_file <- "/wynton/group/andrews/data/adgc/ADGCdatasets/covar_covariates.tsv"
+base_dir <- "/wynton/group/andrews/users/rakshyasharma/pgsc_calc/adgc/results/Aadrita/Chong2022mtdnacn_eur/adgc"
+
+pca_file <- file.path(base_dir, "score", "adgc_popsimilarity.txt.gz")
+prs_file <- file.path(base_dir, "score", "adgc_pgs.txt.gz")
+```
+
+## Read in the data
+```{r}
+fam_data <- read.table(fam_file, header = FALSE,
+                       col.names = c("FID", "IID", "PID", "MID", "Sex", "P"))
+covar_data <- read.table(covar_file, header = TRUE, sep = "\t")
+pca_data <- read_tsv(pca_file, show_col_types = FALSE)
+prs_data <- read.table(prs_file, header = TRUE)
+
+# Clean and prep
+fam_data <- fam_data %>% distinct(IID, .keep_all = TRUE)
+covar_data <- covar_data %>% distinct(ID_2, .keep_all = TRUE)
+pca_data <- pca_data %>% distinct(IID, .keep_all = TRUE)
+prs_data <- prs_data %>% distinct(IID, .keep_all = TRUE)
+
+fam_data$IID <- sub("^0_", "", fam_data$IID)
+fam_data$IID <- ifelse(grepl("^[0]+[0-9]+$", fam_data$IID),
+                       sub("^0+", "", fam_data$IID),
+                       fam_data$IID)
+
+covar_data <- covar_data %>% mutate(ID_2 = as.character(ID_2))
+pca_data <- pca_data %>% mutate(IID = as.character(IID))
+prs_data <- prs_data %>% mutate(IID = as.character(IID))
+
+# Merge data
+merged_data <- covar_data %>%
+  left_join(fam_data, by = c("ID_2" = "IID")) %>%
+  left_join(prs_data, by = c("ID_2" = "IID")) %>%
+  left_join(pca_data, by = c("ID_2" = "IID")) %>%
+  distinct() %>%
+  mutate(
+    across(where(is.numeric), ~na_if(., -9)),
+    status_binary = if_else(status == 2, 1, 0),  # AD = 1, Control = 0
+    status_binary = factor(status_binary, levels = c(0,1))
+  ) %>%
+  filter(status %in% c(1,2)) %>%
+  drop_na(MostSimilarPop, aaoaae, apoe4any, sex, status) 
+
+merged_data$Sex <- factor(merged_data$Sex, levels = c(1, 2), labels = c("Male", "Female"))
+```
+
+## Logistic regression: mtDNAcn PRS -> AD
+```{r}
+model_chong <- glm(status_binary ~ Z_norm2 + aaoaae + Sex + apoe4any + PC1 + PC2 + PC3 + PC4,
+             data = merged_data, family = "binomial")
+summary(model_chong)
+```
+
+## Extract info
+```{r}
+# Extract model coefficients
+coefs_chong <- summary(model_chong)$coefficients
+
+# Define a function to compute OR and 95% CI
+compute_OR_CI <- function(df) {
+  df %>%
+    mutate(
+      OR = exp(Estimate),
+      CI_lower = exp(Estimate - 1.96 * `Std. Error`),
+      CI_upper = exp(Estimate + 1.96 * `Std. Error`)
+    )
+}
+
+# Convert coefs_chong to a dataframe first
+coefs_chong_df <- as.data.frame(coefs_chong)
+
+# Create the dataframe coefs_chong with the odds ratio and 95% CI
+coefs_chong_with_OR_CI <- coefs_chong_df %>%
+  rownames_to_column(var = "term") %>%
+  compute_OR_CI()
+
+# Display the results
+coefs_chong_with_OR_CI
+
+# Filter the Z_norm2 row and select relevant columns
+z_norm_info_chong <- coefs_chong_with_OR_CI %>%
+  filter(term == "Z_norm2") %>%
+  select(term, Estimate, `Std. Error`, `z value`, `Pr(>|z|)`, OR, CI_lower, CI_upper) %>% 
+  mutate(
+    Exposure = "Chong",  # Exposure is Chong mtDNAcn
+    Outcome = "AD"              # Outcome is AD
+  )
+
+# Display the filtered data
+z_norm_info_chong
+```
+
+
+
+#LONGCHAMPS mtdnacn
+
+## Data Preparation
+```{r}
+fam_file <- "/wynton/group/andrews/users/rakshyasharma/PRS/PRS-CS-Auto/resources/ADGC/adgc.fam"
+covar_file <- "/wynton/group/andrews/data/adgc/ADGCdatasets/covar_covariates.tsv"
+base_dir <- "/wynton/group/andrews/users/rakshyasharma/pgsc_calc/adgc/results/Aadrita/Longchamps2021mtdnacn/adgc"
+
+pca_file <- file.path(base_dir, "score", "adgc_popsimilarity.txt.gz")
+prs_file <- file.path(base_dir, "score", "adgc_pgs.txt.gz")
+```
+
+## Read in the data
+```{r}
+fam_data <- read.table(fam_file, header = FALSE,
+                       col.names = c("FID", "IID", "PID", "MID", "Sex", "P"))
+covar_data <- read.table(covar_file, header = TRUE, sep = "\t")
+pca_data <- read_tsv(pca_file, show_col_types = FALSE)
+prs_data <- read.table(prs_file, header = TRUE)
+
+# Clean and prep
+fam_data <- fam_data %>% distinct(IID, .keep_all = TRUE)
+covar_data <- covar_data %>% distinct(ID_2, .keep_all = TRUE)
+pca_data <- pca_data %>% distinct(IID, .keep_all = TRUE)
+prs_data <- prs_data %>% distinct(IID, .keep_all = TRUE)
+
+fam_data$IID <- sub("^0_", "", fam_data$IID)
+fam_data$IID <- ifelse(grepl("^[0]+[0-9]+$", fam_data$IID),
+                       sub("^0+", "", fam_data$IID),
+                       fam_data$IID)
+
+covar_data <- covar_data %>% mutate(ID_2 = as.character(ID_2))
+pca_data <- pca_data %>% mutate(IID = as.character(IID))
+prs_data <- prs_data %>% mutate(IID = as.character(IID))
+
+# Merge data
+merged_data <- covar_data %>%
+  left_join(fam_data, by = c("ID_2" = "IID")) %>%
+  left_join(prs_data, by = c("ID_2" = "IID")) %>%
+  left_join(pca_data, by = c("ID_2" = "IID")) %>%
+  distinct() %>%
+  mutate(
+    across(where(is.numeric), ~na_if(., -9)),
+    status_binary = if_else(status == 2, 1, 0),  # AD = 1, Control = 0
+    status_binary = factor(status_binary, levels = c(0,1))
+  ) %>%
+  filter(status %in% c(1,2)) %>%
+  drop_na(MostSimilarPop, aaoaae, apoe4any, sex, status)
+
+merged_data$Sex <- factor(merged_data$Sex, levels = c(1, 2), labels = c("Male", "Female"))
+```
+
+## Logistic regression: mtDNAcn PRS -> AD
+```{r}
+model_longchamps <- glm(status_binary ~ Z_norm2 + aaoaae + Sex + apoe4any + PC1 + PC2 + PC3 + PC4,
+             data = merged_data, family = "binomial")
+summary(model)
+```
+
+
+## Extract info
+```{r}
+# Extract model coefficients
+coefs_longchamps <- summary(model_longchamps)$coefficients
+
+# Define a function to compute OR and 95% CI
+compute_OR_CI <- function(df) {
+  df %>%
+    mutate(
+      OR = exp(Estimate),
+      CI_lower = exp(Estimate - 1.96 * `Std. Error`),
+      CI_upper = exp(Estimate + 1.96 * `Std. Error`)
+    )
+}
+
+# Convert coefs_chong to a dataframe first
+coefs_longchamps_df <- as.data.frame(coefs_longchamps)
+
+# Create the dataframe coefs_chong with the odds ratio and 95% CI
+coefs_longchamps_with_OR_CI <- coefs_longchamps_df %>%
+  rownames_to_column(var = "term") %>%
+  compute_OR_CI()
+
+
+# Filter the Z_norm2 row and select relevant columns
+z_norm_info_longchamps <- coefs_longchamps_with_OR_CI %>%
+  filter(term == "Z_norm2") %>%
+  select(term, Estimate, `Std. Error`, `z value`, `Pr(>|z|)`, OR, CI_lower, CI_upper) %>% 
+  mutate(
+    Exposure = "Longchamps",  # Exposure is longchamps
+    Outcome = "AD"              # Outcome is AD
+  )
+
+# Display the filtered data
+z_norm_info_longchamps
+```
+
+#HAGG mtdnacn
+
+## Data Preparation
+```{r}
+fam_file <- "/wynton/group/andrews/users/rakshyasharma/PRS/PRS-CS-Auto/resources/ADGC/adgc.fam"
+covar_file <- "/wynton/group/andrews/data/adgc/ADGCdatasets/covar_covariates.tsv"
+base_dir <- "/wynton/group/andrews/users/rakshyasharma/pgsc_calc/adgc/results/Aadrita/Hagg2020mtdnacn/adgc"
+
+pca_file <- file.path(base_dir, "score", "adgc_popsimilarity.txt.gz")
+prs_file <- file.path(base_dir, "score", "adgc_pgs.txt.gz")
+```
+
+## Read in the data
+```{r}
+fam_data <- read.table(fam_file, header = FALSE,
+                       col.names = c("FID", "IID", "PID", "MID", "Sex", "P"))
+covar_data <- read.table(covar_file, header = TRUE, sep = "\t")
+pca_data <- read_tsv(pca_file, show_col_types = FALSE)
+prs_data <- read.table(prs_file, header = TRUE)
+
+# Clean and prep
+fam_data <- fam_data %>% distinct(IID, .keep_all = TRUE)
+covar_data <- covar_data %>% distinct(ID_2, .keep_all = TRUE)
+pca_data <- pca_data %>% distinct(IID, .keep_all = TRUE)
+prs_data <- prs_data %>% distinct(IID, .keep_all = TRUE)
+
+fam_data$IID <- sub("^0_", "", fam_data$IID)
+fam_data$IID <- ifelse(grepl("^[0]+[0-9]+$", fam_data$IID),
+                       sub("^0+", "", fam_data$IID),
+                       fam_data$IID)
+
+covar_data <- covar_data %>% mutate(ID_2 = as.character(ID_2))
+pca_data <- pca_data %>% mutate(IID = as.character(IID))
+prs_data <- prs_data %>% mutate(IID = as.character(IID))
+
+# Merge data
+merged_data <- covar_data %>%
+  left_join(fam_data, by = c("ID_2" = "IID")) %>%
+  left_join(prs_data, by = c("ID_2" = "IID")) %>%
+  left_join(pca_data, by = c("ID_2" = "IID")) %>%
+  distinct() %>%
+  mutate(
+    across(where(is.numeric), ~na_if(., -9)),
+    status_binary = if_else(status == 2, 1, 0),  # AD = 1, Control = 0
+    status_binary = factor(status_binary, levels = c(0,1))
+  ) %>%
+  filter(status %in% c(1,2)) %>%
+  drop_na(MostSimilarPop, aaoaae, apoe4any, sex, status)
+
+merged_data$Sex <- factor(merged_data$Sex, levels = c(1, 2), labels = c("Male", "Female"))
+
+```
+
+## Logistic regression: mtDNAcn PRS -> AD
+```{r}
+model_hagg <- glm(status_binary ~ Z_norm2 + aaoaae + Sex + apoe4any + PC1 + PC2 + PC3 + PC4,
+             data = merged_data, family = "binomial")
+summary(model_hagg)
+```
+
+## Extract info
+```{r}
+# Extract model coefficients
+coefs_hagg <- summary(model_hagg)$coefficients
+
+# Convert coefs_chong to a dataframe first
+coefs_hagg_df <- as.data.frame(coefs_hagg)
+
+# Create the dataframe coefs_chong with the odds ratio and 95% CI
+coefs_hagg_with_OR_CI <- coefs_hagg_df %>%
+  rownames_to_column(var = "term") %>%
+  compute_OR_CI()
+
+
+# Filter the Z_norm2 row and select relevant columns
+z_norm_info_hagg <- coefs_hagg_with_OR_CI %>%
+  filter(term == "Z_norm2") %>%
+  select(term, Estimate, `Std. Error`, `z value`, `Pr(>|z|)`, OR, CI_lower, CI_upper) %>% 
+  mutate(
+    Exposure = "Hagg",  # Exposure is hagg
+    Outcome = "AD"              # Outcome is AD
+  )
+
+# Display the filtered data
+z_norm_info_hagg
+```
+
+
+#GUPTA mtdnacn
+
+## Data Preparation
+```{r}
+fam_file <- "/wynton/group/andrews/users/rakshyasharma/PRS/PRS-CS-Auto/resources/ADGC/adgc.fam"
+covar_file <- "/wynton/group/andrews/data/adgc/ADGCdatasets/covar_covariates.tsv"
+base_dir <- "/wynton/group/andrews/users/rakshyasharma/pgsc_calc/adgc/results/Aadrita/Gupta2023mtDNAcn/adgc"
+
+pca_file <- file.path(base_dir, "score", "adgc_popsimilarity.txt.gz")
+prs_file <- file.path(base_dir, "score", "adgc_pgs.txt.gz")
+```
+
+## Read in the data
+```{r}
+fam_data <- read.table(fam_file, header = FALSE,
+                       col.names = c("FID", "IID", "PID", "MID", "Sex", "P"))
+covar_data <- read.table(covar_file, header = TRUE, sep = "\t")
+pca_data <- read_tsv(pca_file, show_col_types = FALSE)
+prs_data <- read.table(prs_file, header = TRUE)
+
+# Clean and prep
+fam_data <- fam_data %>% distinct(IID, .keep_all = TRUE)
+covar_data <- covar_data %>% distinct(ID_2, .keep_all = TRUE)
+pca_data <- pca_data %>% distinct(IID, .keep_all = TRUE)
+prs_data <- prs_data %>% distinct(IID, .keep_all = TRUE)
+
+fam_data$IID <- sub("^0_", "", fam_data$IID)
+fam_data$IID <- ifelse(grepl("^[0]+[0-9]+$", fam_data$IID),
+                       sub("^0+", "", fam_data$IID),
+                       fam_data$IID)
+
+covar_data <- covar_data %>% mutate(ID_2 = as.character(ID_2))
+pca_data <- pca_data %>% mutate(IID = as.character(IID))
+prs_data <- prs_data %>% mutate(IID = as.character(IID))
+
+# Merge data
+merged_data <- covar_data %>%
+  left_join(fam_data, by = c("ID_2" = "IID")) %>%
+  left_join(prs_data, by = c("ID_2" = "IID")) %>%
+  left_join(pca_data, by = c("ID_2" = "IID")) %>%
+  distinct() %>%
+  mutate(
+    across(where(is.numeric), ~na_if(., -9)),
+    status_binary = if_else(status == 2, 1, 0),  # AD = 1, Control = 0
+    status_binary = factor(status_binary, levels = c(0,1))
+  ) %>%
+  filter(status %in% c(1,2)) %>%
+  drop_na(MostSimilarPop, aaoaae, apoe4any, sex, status)
+
+merged_data$Sex <- factor(merged_data$Sex, levels = c(1, 2), labels = c("Male", "Female"))
+
+```
+
+## Logistic regression: mtDNAcn PRS -> AD
+```{r}
+model_gupta <- glm(status_binary ~ Z_norm2 + aaoaae + Sex + apoe4any + PC1 + PC2 + PC3 + PC4,
+             data = merged_data, family = "binomial")
+summary(model_gupta)
+```
+
+## Extract info
+```{r}
+# Extract model coefficients
+coefs_gupta <- summary(model_gupta)$coefficients
+
+# Convert coefs_chong to a dataframe first
+coefs_gupta_df <- as.data.frame(coefs_gupta)
+
+# Create the dataframe coefs_chong with the odds ratio and 95% CI
+coefs_gupta_with_OR_CI <- coefs_gupta_df %>%
+  rownames_to_column(var = "term") %>%
+  compute_OR_CI()
+
+
+# Filter the Z_norm2 row and select relevant columns
+z_norm_info_gupta <- coefs_gupta_with_OR_CI %>%
+  filter(term == "Z_norm2") %>%
+  select(term, Estimate, `Std. Error`, `z value`, `Pr(>|z|)`, OR, CI_lower, CI_upper) %>% 
+  mutate(
+    Exposure = "Gupta",  # Exposure is gupta
+    Outcome = "AD"              # Outcome is AD
+  )
+
+# Display the filtered data
+z_norm_info_gupta
+```
+
+
+#Combine z_norm info for all mtdnacn gwass and export as a dataframe
+```{r}
+# Combine the dataframes
+combined_z_norm_info <- bind_rows(z_norm_info_gupta, z_norm_info_chong, z_norm_info_hagg, z_norm_info_longchamps)
+
+# Remove the 'term' column
+combined_z_norm_info <- combined_z_norm_info %>%
+  select(Exposure, Outcome, everything()) %>%
+  select(-term)
+
+# Display the combined dataframe 
+head(combined_z_norm_info)
+
+# Export the combined dataframe to a CSV file
+write_csv(combined_z_norm_info, "/wynton/group/andrews/users/achatterjee/prs/data/prs_results_mtdnacn_onto_AD.csv")
+```
+

@@ -1,0 +1,27 @@
+PLINK v1.90b6.26 64-bit (2 Apr 2022)
+Options in effect:
+  --bfile /wynton/group/andrews/data/reference_panels/EUR_All_Chr
+  --out longchamps_prs
+  --score /wynton/group/andrews/users/achatterjee/prs/data/mtDNAcn_clump_longchamps_apoe_removed.txt 1 2 3 header
+
+Hostname: gh-id19.wynton.ucsf.edu
+Working directory: /wynton/group/andrews/users/achatterjee/prs
+Start time: Tue Mar 11 16:28:09 2025
+
+Random number seed: 1741735689
+257527 MB RAM detected; reserving 128763 MB for main workspace.
+9801351 variants loaded from .bim file.
+503 people (0 males, 0 females, 503 ambiguous) loaded from .fam.
+Ambiguous sex IDs written to longchamps_prs.nosex .
+Using 1 thread (no multithreaded calculations invoked).
+Before main variant filters, 503 founders and 0 nonfounders present.
+Calculating allele frequencies... done.
+Total genotyping rate is 0.999774.
+9801351 variants and 503 people pass filters and QC.
+Note: No phenotypes present.
+Warning: 984 lines skipped in --score file (984 due to variant ID mismatch, 0
+due to allele code mismatch); see longchamps_prs.nopred for details.
+--score: 8507 valid predictors loaded.
+--score: Results written to longchamps_prs.profile .
+
+End time: Tue Mar 11 16:28:17 2025
