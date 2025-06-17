@@ -81,7 +81,7 @@ or_plot
 lhc_mr_results <- read_csv("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/results/Aadrita_results/LHC-MR_reverse_direction_all_results.csv")
 ```
 
-##Make CI (not using OR in reverse direction)
+##Make CI (not using OR in reverse direction) and change exposure names
 ```{r}
 lhc_mr_results_clean <- lhc_mr_results %>%
   mutate(
@@ -89,11 +89,19 @@ lhc_mr_results_clean <- lhc_mr_results %>%
     CI_uci95 = beta + 1.96 * SE,
     pval = `P-Value`
   )
+
+lhc_mr_results_new_names <- lhc_mr_results_clean %>%
+  mutate(Exposure = case_when(
+    Exposure == "Kunkle" ~ "AD",
+    Exposure == "Bellenguez" ~ "AD/dementia",
+    Exposure == "Nalls" ~ "PD",
+    TRUE ~ Exposure  # keep other names unchanged
+  ))
 ```
 
 ##Plot 
 ```{r}
-or_plot <- ggplot(lhc_mr_results_clean, aes(y = Exposure, x = beta, xmin = CI_lci95, xmax = CI_uci95)) +
+or_plot <- ggplot(lhc_mr_results_new_names, aes(y = Exposure, x = beta, xmin = CI_lci95, xmax = CI_uci95)) +
   geom_pointrange(aes(color = pval < 0.05)) +
   facet_wrap(~Outcome) +
   geom_vline(xintercept = 0, linetype = 2) +
