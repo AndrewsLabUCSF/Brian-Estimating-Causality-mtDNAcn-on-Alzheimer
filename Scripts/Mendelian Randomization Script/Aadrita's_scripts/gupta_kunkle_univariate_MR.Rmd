@@ -76,23 +76,34 @@ coltypes = cols(
 ## Exposure 1: Format Gupta mtDNAcn 
 ``` {r read_in_gupta}
 #Read in Gupta
-mtDNAcn_gupta <- read_tsv("/wynton/group/andrews/data/summary_stats/results/Gupta2023mtDNAcn_adjusted.tsv")
+exposure_path = "/wynton/group/andrews/data/summary_stats/results/Gupta2023mtDNAcn/Gupta2023mtDNAcn.b37.chrall.tsv.gz"
+exposure_ss_Gupta <- read_tsv(exposure_path) %>%
+  mutate(
+    N = 163372,
+    Z = ES / SE, 
+    P = 10^(-LP)) %>%
+  dplyr::rename(CHROM = CHR, BETA = ES) %>%
+  mutate(
+    TEMP = REF,
+    REF = ALT,
+    ALT = TEMP) %>%
+  select(-TEMP)
 
 #Format (switched alleles)
-Format_mtDNAcn_gupta <- mtDNAcn_gupta %>%   
+Format_mtDNAcn_gupta <- exposure_ss_Gupta %>%   
   format_data(.,
               snps = NULL,
               header = TRUE,
-              snp_col = "SNP",
+              snp_col = "DBSNP_ID",
               beta_col = "BETA",
               se_col = "SE",
-              eaf_col = "FRQ",
+              eaf_col = "AF",
               phenotype_col = "TRAIT",
-              effect_allele_col = "A2",
-              other_allele_col = "A1",
+              effect_allele_col = "ALT",
+              other_allele_col = "REF",
               pval_col = "P",
-              chr_col = "CHR",
-              pos_col = "BP",
+              chr_col = "CHROM",
+              pos_col = "POS",
               log_pval = FALSE 
    ) %>%
   as_tibble()
@@ -234,34 +245,3 @@ radial_res <- ivw_radial(radial_dat$mtDNA_gupta.kunkle, alpha = 0.05/nrow(radial
 write_csv(mr_res, "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/results/Aadrita_results/univariate_mr_results/gupta_kunkle.csv")
 ```
 
-
-#MRLap (didn't do this)
-```{r}
-#remotes::install_github("n-mounier/MRlap")
-library(MRlap)
-
-#Reformatting exposure
-reformat_mtDNAcn_gupta <- mtDNAcn_gupta %>% 
-  dplyr::rename(rsid = "SNP", chr = "CHR")
-
-#Reformatting outcome (use total sample size instead of effective)
-outcome <- OutcomeAD_kunkle %>% 
-  dplyr::rename(rs = DBSNP_ID, chr = CHROM) %>% 
-  select(-OR) %>% 
-  filter(rs != 'rs429358')
-
-mrlap <- MRlap(exposure = reformat_mtDNAcn_gupta,
-               exposure_name = "exposure",
-               outcome = outcome,
-               outcome_name = "outcome",
-               MR_pruning_dist = 10000,
-               MR_pruning_LD = 0.001,
-               ld = "/wynton/group/andrews/data/eur_w_ld_chr/",
-               hm3 = "/wynton/group/andrews/data/w_hm3.snplist")
-mrlap
-
-mrlap$MRcorrection$IVs
-
-filter(outcome, rs %in% mrlap$MRcorrection$IVs)
-
-```

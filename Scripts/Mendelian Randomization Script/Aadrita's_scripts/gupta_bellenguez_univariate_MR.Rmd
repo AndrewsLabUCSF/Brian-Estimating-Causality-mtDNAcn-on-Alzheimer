@@ -73,109 +73,38 @@ coltypes = cols(
 
 ```
 
-#Do mungesumstats by chromosome for Gupta GWAS (ignore)
-```{r}
-#Load in Gupta
-exposure_path_gupta = "/wynton/group/andrews/data/summary_stats/resources/gwas/Gupta2023/Gupta2023_mtdnacn_raw.tsv.gz"
-mtDNAcn_gupta <- read_tsv(exposure_path_gupta,comment="#")
-
-# Rename columns
-mtDNAcn_gupta_new <- mtDNAcn_gupta %>% 
-  dplyr::rename("CHR" = "chromosome",
-                "BP" = "base_pair_location")
-
-# Debugging: Check first few rows
-cat("Renamed columns:\n")
-print(colnames(mtDNAcn_gupta_new))
-print(head(mtDNAcn_gupta_new))
-
-# Filter and split dataset by chromosome (excluding sex chromosomes)
-chromosome_groups <- mtDNAcn_gupta_new %>%
-  filter(!(CHR %in% c("X", "Y"))) %>%  
-  group_split(CHR)
-
-# Define a function to process and save each chromosome
-process_chromosome <- function(data_chunk) {
-  chrom <- unique(data_chunk$CHR)  # Get chromosome number
-  cat("Processing chromosome:", chrom, "\n")
-  
-  # Format the chromosome-specific data
-  formatted_chunk <- MungeSumstats::format_sumstats(
-    data_chunk, 
-    ref_genome = "GRCh37",
-    return_data = TRUE
-  ) %>%
-    as_tibble()
-  
-  # Save output immediately
-  output_file <- paste0("processed_mtDNAcn_chr", chrom, ".tsv")
-  write_tsv(formatted_chunk, file = output_file)
-  
-  cat("Saved:", output_file, "\n")
-  
-  return(formatted_chunk)
-}
-
-#Reload processed chunks and combine 
-# Define the full path to the processed chunks folder
-processed_folder <- "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/other/processed_chunks"
-
-# Get a list of all processed chromosome files
-processed_files <- list.files(path = processed_folder, pattern = "processed_mtDNAcn_chr.*\\.tsv$", full.names = TRUE)
-
-# Function to read TSV files with consistent column types
-read_with_types <- function(file) {
-  read_tsv(file, col_types = cols(
-    CHR  = col_character(),  # Ensure CHR is a character
-    BP   = col_double(),     # Ensure BP is numeric
-    BETA = col_double(),     # Ensure BETA is numeric
-    SE   = col_double(),     # Ensure SE is numeric
-    FRQ  = col_double(),     # Ensure FRQ is numeric
-    P    = col_double(),     # Ensure P is numeric
-    PVAL = col_double(),     # Ensure PVAL is numeric
-    SNP  = col_character(),  # Keep SNP as character
-    A1   = col_character(),  # Keep A1 as character
-    A2   = col_character(),  # Keep A2 as character
-    ID   = col_character()   # Keep ID as character
-  ), show_col_types = FALSE)
-}
-
-# Load and combine all processed chunks
-combined_mtDNAcn <- processed_files %>%
-  lapply(read_with_types) %>%
-  bind_rows()
-
-# Check the combined dataset
-print(dim(combined_mtDNAcn))  # Print dimensions
-print(head(combined_mtDNAcn)) # Preview first few rows
-```
-
-#Export Gupta GWAS
-```{r}
-write_tsv(combined_mtDNAcn, "/wynton/group/andrews/data/summary_stats/results/Gupta2023mtDNAcn.tsv")
-```
-
 
 ## Exposure 1: Format Gupta mtDNAcn (start here)
 ``` {r read_in_gupta}
 #Read in Gupta
-combined_mtDNAcn <- read_tsv("/wynton/group/andrews/data/summary_stats/results/Gupta2023mtDNAcn_adjusted.tsv")
+exposure_path = "/wynton/group/andrews/data/summary_stats/results/Gupta2023mtDNAcn/Gupta2023mtDNAcn.b37.chrall.tsv.gz"
+exposure_ss_Gupta <- read_tsv(exposure_path) %>%
+  mutate(
+    N = 163372,
+    Z = ES / SE, 
+    P = 10^(-LP)) %>%
+  dplyr::rename(CHROM = CHR, BETA = ES) %>%
+  mutate(
+    TEMP = REF,
+    REF = ALT,
+    ALT = TEMP) %>%
+  select(-TEMP)
 
 #Format (switched alleles)
-Format_mtDNAcn_gupta <- combined_mtDNAcn %>%   
+Format_mtDNAcn_gupta <- exposure_ss_Gupta %>%   
   format_data(.,
               snps = NULL,
               header = TRUE,
-              snp_col = "SNP",
+              snp_col = "DBSNP_ID",
               beta_col = "BETA",
               se_col = "SE",
-              eaf_col = "FRQ",
+              eaf_col = "AF",
               phenotype_col = "TRAIT",
-              effect_allele_col = "A2",
-              other_allele_col = "A1",
+              effect_allele_col = "ALT",
+              other_allele_col = "REF",
               pval_col = "P",
-              chr_col = "CHR",
-              pos_col = "BP",
+              chr_col = "CHROM",
+              pos_col = "POS",
               log_pval = FALSE 
    ) %>%
   as_tibble()
@@ -358,34 +287,3 @@ radial_res_outlier <- ivw_radial(radial_dat_outlier$mtDNA_gupta.bellenguez, alph
 write_csv(mr_res_outlier, "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/results/Aadrita_results/univariate_mr_results/gupta_bellenguez.csv")
 ```
 
-
-#MRLap (didn't do this)
-```{r}
-#remotes::install_github("n-mounier/MRlap")
-library(MRlap)
-
-#Reformatting exposure
-reformat_mtDNAcn_gupta <- combined_mtDNAcn %>% 
-  dplyr::rename(rsid = "SNP", chr = "CHR")
-
-#Reformatting outcome (use total sample size instead of effective)
-outcome <- OutcomeAD_Bellenguez %>% 
-  dplyr::rename(rs = DBSNP_ID, chr = CHROM) %>% 
-  select(-OR) %>% 
-  filter(rs != 'rs429358')
-
-mrlap <- MRlap(exposure = reformat_mtDNAcn_gupta,
-               exposure_name = "exposure",
-               outcome = outcome,
-               outcome_name = "outcome",
-               MR_pruning_dist = 10000,
-               MR_pruning_LD = 0.001,
-               ld = "/wynton/group/andrews/data/eur_w_ld_chr/",
-               hm3 = "/wynton/group/andrews/data/w_hm3.snplist")
-mrlap
-
-mrlap$MRcorrection$IVs
-
-filter(outcome, rs %in% mrlap$MRcorrection$IVs)
-
-```
