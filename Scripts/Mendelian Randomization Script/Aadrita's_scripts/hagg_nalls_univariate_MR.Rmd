@@ -218,6 +218,42 @@ write_csv(harmonised_data, "/wynton/group/andrews/users/achatterjee/mtdnacn/Bria
 harmonised_data <- read_csv("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/Harmonized_Datasets/hagg_nalls_univariate_harmonised_data.csv")
 ```
 
+#F statistic
+```{r}
+## F statistic. Burgess et al 2011
+f_stat = function(N, K, R){
+  f = ((N-K-1) / K) * (R/(1-R))
+  f
+}
+
+## Proportion of phenotypic variance explained by SNP
+## https://doi.org/10.1371/journal.pone.0120758.s001
+
+snp.pve <- function(eaf, beta, se, n){
+  (2*eaf*(1 - eaf)*beta^2) / (2 * beta * eaf * (1-eaf) + se^2 * 2 * n * eaf * (1-eaf))
+}
+
+f_res <- harmonised_data %>%
+  group_by(exposure, outcome) %>%
+  filter(mr_keep == TRUE) %>%
+  select(SNP, exposure, outcome, effect_allele.exposure, eaf.exposure, beta.exposure, se.exposure) %>%
+  mutate(
+    samplesize.exposure = 295150,
+    pve = snp.pve(eaf.exposure, beta.exposure, se.exposure, samplesize.exposure),
+    f = f_stat(samplesize.exposure, 1, pve),
+    # f = abs(beta.exposure)^2 / se.exposure^2
+  ) %>%
+  summarise(
+    pve = sum(pve, na.rm = T),
+    k = n(),
+    samplesize = max(samplesize.exposure),
+    f = mean(f, na.rm = T),
+  )
+f_res
+
+```
+
+
 #MR
 ```{r}
 mr_res <- mr(harmonised_data, method_list = c(

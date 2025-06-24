@@ -428,7 +428,7 @@ write_rds(mvdat, '/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimati
 
 #Read in mvdat
 ```{r}
-mvdat <- read_rds('/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/Harmonized_Datasets/harmonized_longchamps_plate_kunkle_mvmr.rds')
+mvdat <- read_rds('/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/Harmonized_Datasets/harmonized_hagg_plate_kunkle_mvmr.rds')
 ```
 
 #Using TwoSample MR package

@@ -69,7 +69,7 @@ coltypes = cols(
 ## Exposure 1: Chong
 ``` {r read_in_chong}
 
-exposure_path_chong = "/wynton/group/andrews/data/summary_stats/results/Chong2022mtdnacn_eur.chrall.CPRA_b37.tsv"
+exposure_path_chong = "/wynton/group/andrews/data/summary_stats/results/Chong2022mtdnacn_eur.chrall.CPRA_b37.tsv.gz"
 
 mtDNAcn_chong <- read_tsv(exposure_path_chong,comment="#")
 
@@ -107,22 +107,27 @@ Format_mtDNAcn_chong <- Format_mtDNAcn_chong %>%
 mutate(exposure = "mtDNA_chong")
 
 
-# longchamps Filter and Clumping
-options(ieugwasr_api = 'gwas-api.mrcieu.ac.uk/')
-
 mtDNAcn_chong_gws <- filter(Format_mtDNAcn_chong, pval.exposure < 5e-8)
 
 
-mtDNAcn_clump_chong <- clump_data(mtDNAcn_chong_gws, clump_kb = 10000,
-                            clump_r2 = 0.001,
-                            clump_p1 = 1,
-                            clump_p2 = 1,
-                            pop = "EUR"
-)%>% 
-  as_tibble()
+mtDNAcn_clump_chong <- mtDNAcn_chong_gws %>% 
+  filter(pval.exposure < 1e-5) %>%
+  select(rsid = SNP, pval = pval.exposure) %>%
+  ieugwasr::ld_clump(
+    dat = .,
+    clump_kb = 10000,
+    clump_r2 = 0.001,
+    clump_p = 0.99,
+    bfile = '/wynton/group/andrews/data/reference_panels/EUR_All_Chr',
+    plink_bin = '/wynton/home/andrews/achatterjee/plink'
+  )
+
+
+#Append the SNPS to Format_mtDNAcn_chong so we can get all the columns and get gws 
+mtDNAcn_chong_gws <- filter(Format_mtDNAcn_chong, SNP %in% mtDNAcn_clump_chong$rsid, pval.exposure < 5e-8)
 
 #Remove APOE region
-mtDNAcn_clump_chong <- filter(mtDNAcn_clump_chong, !(chr.exposure == 19 & between(pos.exposure, 44912079, 45912079)))
+mtDNAcn_clump_chong <- filter(mtDNAcn_chong_gws, !(chr.exposure == 19 & between(pos.exposure, 44912079, 45912079)))
 ```
 
 ## Outcome: Bellenguez
@@ -183,6 +188,7 @@ system("mv combined_query_snp_list_grch37.txt exposure_outcome_proxy_snps_chong_
 outcome_dat <- munge_proxies("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/proxy_snps/exposure_outcome_proxy_snps_chong_bellenguez_Aadrita.txt", outcome_AD_Format_Bellenguez, outcome_clump)
 ```
 
+
 #Harmonise
 ```{r}
 harmonised_data <- harmonise_data(mtDNAcn_clump_chong, outcome_dat, action = 2) %>% as_tibble() %>%
@@ -206,6 +212,44 @@ write_csv(harmonised_data, "/wynton/group/andrews/users/achatterjee/mtdnacn/Bria
 ```{r}
 harmonised_data <- read_csv("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/Harmonized_Datasets/chong_bellenguez_univariate_harmonised_data.csv")
 ```
+
+#F statistic
+```{r}
+## F statistic. Burgess et al 2011
+f_stat = function(N, K, R){
+  f = ((N-K-1) / K) * (R/(1-R))
+  f
+}
+
+## Proportion of phenotypic variance explained by SNP
+## https://doi.org/10.1371/journal.pone.0120758.s001
+
+snp.pve <- function(eaf, beta, se, n){
+  (2*eaf*(1 - eaf)*beta^2) / (2 * beta * eaf * (1-eaf) + se^2 * 2 * n * eaf * (1-eaf))
+}
+
+f_res <- harmonised_data %>%
+  group_by(exposure, outcome) %>%
+  filter(mr_keep == TRUE) %>%
+  select(SNP, exposure, outcome, effect_allele.exposure, eaf.exposure, beta.exposure, se.exposure) %>%
+  mutate(
+    samplesize.exposure = 395781,
+    pve = snp.pve(eaf.exposure, beta.exposure, se.exposure, samplesize.exposure),
+    f = f_stat(samplesize.exposure, 1, pve),
+    # f = abs(beta.exposure)^2 / se.exposure^2
+  ) %>%
+  summarise(
+    pve = sum(pve, na.rm = T),
+    k = n(),
+    samplesize = max(samplesize.exposure),
+    f = mean(f, na.rm = T),
+  )
+f_res
+
+```
+
+
+
 
 #MR
 ```{r}
@@ -267,37 +311,5 @@ radial_res_outlier <- ivw_radial(radial_dat_outlier$mtDNA_chong.bellenguez, alph
 #Save MR results
 ```{r}
 write_csv(mr_res_outlier, "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/results/Aadrita_results/univariate_mr_results/chong_bellenguez.csv")
-```
-
-
-#MR Lap
-```{r}
-library(MRlap)
-
-#Reformatting exposure
-reformat_mtDNAcn_chong <- mtDNAcn_chong %>% 
-  rename(rsid = "DBSNP_ID", chr = "CHROM", ) %>% 
-  select(-OR)
-
-#Reformatting outcome
-outcome <- OutcomeAD_Bellenguez %>% 
-  dplyr::rename(rs = DBSNP_ID, chr = CHROM) %>% 
-  select(-OR) %>% 
-  filter(rs != 'rs429358')
-
-mrlap <- MRlap(exposure = reformat_mtDNAcn_chong,
-               exposure_name = "exposure",
-               outcome = outcome,
-               outcome_name = "outcome",
-               MR_pruning_dist = 10000,
-               MR_pruning_LD = 0.001,
-               ld = "/wynton/group/andrews/data/eur_w_ld_chr/",
-               hm3 = "/wynton/group/andrews/data/w_hm3.snplist")
-mrlap
-
-mrlap$MRcorrection$IVs
-
-filter(outcome, rs %in% mrlap$MRcorrection$IVs)
-
 ```
 

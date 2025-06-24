@@ -106,8 +106,6 @@ Format_mtDNAcn_hagg <- mtDNAcn_hagg %>% format_data(.,
 Format_mtDNAcn_hagg <- Format_mtDNAcn_hagg %>%
 mutate(exposure = "mtDNA_hagg")
 
-
-# Hagg Filter and Clumping
 mtDNAcn_hagg_gws <- filter(Format_mtDNAcn_hagg, pval.exposure < 5e-8)
 
 
@@ -124,11 +122,11 @@ mtDNAcn_clump_hagg <- mtDNAcn_hagg_gws %>%
     plink_bin = '/wynton/home/andrews/achatterjee/plink'
   )
 
-#Append the SNPS to combined_mtDNAcn so we can get all the columns
-mtDNAcn_hagg_new <- filter(Format_mtDNAcn_hagg, SNP %in% mtDNAcn_clump_hagg$rsid)
+#Append the SNPS to Format_mtDNAcn_hagg so we can get all the columns and get gws 
+mtDNAcn_hagg_gws <- filter(Format_mtDNAcn_hagg, SNP %in% mtDNAcn_clump_hagg$rsid, pval.exposure < 5e-8)
 
 #Remove APOE region
-mtDNAcn_clump_hagg <- filter(mtDNAcn_hagg_new, !(chr.exposure == 19 & between(pos.exposure, 44912079, 45912079)))
+mtDNAcn_clump_hagg <- filter(mtDNAcn_hagg_gws, !(chr.exposure == 19 & between(pos.exposure, 44912079, 45912079)))
 ```
 
 ## Exposure 2: Blood Cell Composition 
@@ -203,16 +201,20 @@ platelets_clump <- read_csv("/wynton/group/andrews/users/achatterjee/mtdnacn/Bri
 
 ## Outcome: Nalls PD
 ```{r}
-#Read munged sumstats 
-OutcomeAD_Nalls_munge_sumstats <- read_tsv("/wynton/group/andrews/data/summary_stats/results/Nalls2019_PD.tsv")
+outcome_path = "/wynton/group/andrews/data/summary_stats/results/Nalls2019PD/Nalls2019PD.b37.chrall.tsv.gz"
 
-#Make N column N_CAS+N_CON
-OutcomeAD_Nalls_munge_sumstats <- OutcomeAD_Nalls_munge_sumstats %>%
-  mutate(N = N_CAS + N_CON)
+outcome_ss_Nalls <- read_tsv(outcome_path) %>%
+  mutate(
+    N = 1460059,
+    Z = ES / SE, 
+    P = 10^(-LP)) %>%
+  dplyr::rename(CHROM = CHR, BETA = ES) %>% 
+  dplyr::select(DBSNP_ID, CHROM, POS, ALT, REF, AF, BETA, SE, Z, P, N) %>% 
+  dplyr::rename(SNP = DBSNP_ID)
 
 
 # Rename right-side variables to match column names of your GWAS dataset 
-outcome_AD_Format_Nalls <- OutcomeAD_Nalls_munge_sumstats %>%
+outcome_AD_Format_Nalls <- outcome_ss_Nalls %>%
   format_data(.,
     type = "outcome",
     #snps = NULL,
@@ -220,13 +222,13 @@ outcome_AD_Format_Nalls <- OutcomeAD_Nalls_munge_sumstats %>%
     snp_col = "SNP",
     beta_col = "BETA",
     se_col = "SE",
-    eaf_col = "FRQ",
-    effect_allele_col = "A1",
-    other_allele_col = "A2",
+    eaf_col = "AF",
+    effect_allele_col = "ALT",
+    other_allele_col = "REF",
     pval_col = "P",
     samplesize_col = "N",
-    pos_col = "BP",
-    chr_col = "CHR",
+    pos_col = "POS",
+    chr_col = "CHROM",
     log_pval = FALSE
 ) %>%
   as_tibble()
@@ -362,7 +364,7 @@ hagg_platelet_proxy <- comb_exp_proxy %>%
 #Clump 
 ```{r}
 clump_comb_exp <- hagg_platelet_proxy %>% 
-  select(rsid = SNP, pval = pval.exposure) %>%
+  select(rsid = SNP, pval = exposure) %>%
   ieugwasr::ld_clump(
     dat = .,
     clump_kb = 10000,
@@ -386,7 +388,7 @@ outcome_clump <- semi_join(
 outcome_wo_snps <- anti_join(
   comb_exp_independent, outcome_AD_Format_Nalls, by = "SNP"
 ) %>%
-  distinct(SNP) #227 SNPs
+  distinct(SNP) #215 SNPs
 ```
 
 #LD proxy SNP for outcome
@@ -563,5 +565,5 @@ ci <- combined_df %>%
   filter(Exposure != "Platelet_cn")
 
 #Export 
-write_csv(ci, "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/results/Aadrita_results/mvmr_results/hagg_nalls.csv")
+#write_csv(ci, "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/results/Aadrita_results/mvmr_results/hagg_nalls.csv")
 ```

@@ -36,7 +36,7 @@ combined_df_clean <- combined_df %>%
 # Check the result
 head(combined_df_clean)
 
-write_tsv(combined_df_clean, "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/results/Aadrita_results/combined_univariate_results.tsv")
+#write_csv(combined_df_clean, "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/results/Aadrita_results/combined_univariate_results.csv")
 ```
 
 # Calculate ORs 
@@ -71,16 +71,24 @@ odds_ratios <- odds_ratios %>%
 
 #Plot
 ```{r}
-or_plot <- ggplot(odds_ratios, aes(
+# Step 1: Prepare truncated dataset with capped CI and flag for arrows
+odds_ratios_plot <- odds_ratios %>%
+  mutate(
+    OR_uci95_capped = ifelse(OR_uci95 > 2, 2, OR_uci95),
+    is_truncated = OR_uci95 > 2
+  )
+
+# Step 2: Base plot with capped CI
+or_plot <- ggplot(odds_ratios_plot, aes(
   y = method,
   x = OR,
   xmin = OR_lci95,
-  xmax = OR_uci95,
+  xmax = OR_uci95_capped,
   color = exposure
 )) +
-  geom_pointrange(position = position_dodge(width = 0.5)) +  # dodges to separate lines
-  facet_wrap(~outcome) +
+  geom_pointrange(position = position_dodge(width = 0.5)) +
   geom_vline(xintercept = 1, linetype = 2) +
+  facet_wrap(~outcome) +
   labs(
     title = "Univariate MR results for mtDNAcn onto AD and PD",
     x = "Odds Ratio (95% CI)",
@@ -99,6 +107,21 @@ or_plot <- ggplot(odds_ratios, aes(
   ) +
   scale_color_brewer(palette = "Set1") +
   scale_y_discrete(limits = rev)
+
+# Step 3: Add arrows for truncated values
+or_plot <- or_plot +
+  geom_segment(
+    data = odds_ratios_plot %>% filter(is_truncated),
+    aes(
+      x = OR_uci95_capped,
+      xend = OR_uci95_capped + 0.05,  # tiny arrow segment
+      y = method,
+      yend = method,
+      color = exposure
+    ),
+    arrow = arrow(length = unit(0.1, "cm")),
+    inherit.aes = FALSE
+  )
 
 or_plot
 

@@ -13,6 +13,10 @@ library(broom)
 library(ggplot2)
 library(tidyr)
 library(tidyverse)
+#install.packages("patchwork")
+library(patchwork)
+library(cowplot)
+
 ```
 
 #FORWARD DIRECTION
@@ -40,11 +44,13 @@ odds_ratios <- lhc_mr_results %>%
     pval_fdr = p.adjust(pval, method = "fdr")
   )
 
+#Export
+#write_csv(odds_ratios, "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/results/Aadrita_results/LHC-MR_forward_direction_all_results_adjusted_p_values.csv")
 ```
 
 ##Plot 
 ```{r}
-or_plot <- ggplot(odds_ratios, aes(y = Exposure, x = OR, xmin = OR_lci95, xmax = OR_uci95)) +
+or_plot_forward <- ggplot(odds_ratios, aes(y = Exposure, x = OR, xmin = OR_lci95, xmax = OR_uci95)) +
   geom_pointrange(aes(color = pval_fdr < 0.05)) +
   facet_wrap(~Outcome, scales = "free_x") +
   geom_vline(xintercept = 1, linetype = 2) +
@@ -69,10 +75,10 @@ or_plot <- ggplot(odds_ratios, aes(y = Exposure, x = OR, xmin = OR_lci95, xmax =
   ) +
   scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"))
 
-or_plot
+or_plot_forward
 
 
-#ggsave("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/results/Aadrita_results/plots/OR_lhc-mr_forward_dir.png", or_plot, units = "in", width = 6, height = 4, dpi = 300) 
+#ggsave("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/results/Aadrita_results/plots/OR_lhc-mr_forward_dir.png", or_plot_forward, units = "in", width = 6, height = 4, dpi = 300) 
 ```
 
 #REVERSE DIRECTION
@@ -96,13 +102,20 @@ lhc_mr_results_new_names <- lhc_mr_results_clean %>%
     Exposure == "Bellenguez" ~ "AD/dementia",
     Exposure == "Nalls" ~ "PD",
     TRUE ~ Exposure  # keep other names unchanged
-  ))
+  )) %>% 
+  mutate(
+    pval_fdr = p.adjust(pval, method = "fdr")
+  )
+
+#Export
+#write_csv(lhc_mr_results_new_names, "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/results/Aadrita_results/LHC-MR_reverse_direction_all_results_adjusted_p_values.csv")
+
 ```
 
 ##Plot 
 ```{r}
-or_plot <- ggplot(lhc_mr_results_new_names, aes(y = Exposure, x = beta, xmin = CI_lci95, xmax = CI_uci95)) +
-  geom_pointrange(aes(color = pval < 0.05)) +
+or_plot_reverse <- ggplot(lhc_mr_results_new_names, aes(y = Exposure, x = beta, xmin = CI_lci95, xmax = CI_uci95)) +
+  geom_pointrange(aes(color = pval_fdr < 0.05)) +
   facet_wrap(~Outcome) +
   geom_vline(xintercept = 0, linetype = 2) +
   labs(title = "LHC-MR Results for AD and PD\nonto mtDNAcn", x = "Odds Ratio (95% CI)", y = "Exposure") +
@@ -119,8 +132,7 @@ or_plot <- ggplot(lhc_mr_results_new_names, aes(y = Exposure, x = beta, xmin = C
   scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black")) +
   theme(legend.position = "none")
 
-or_plot
+or_plot_reverse
 
-#ggsave("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/results/Aadrita_results/plots/OR_lhc-mr_reverse_dir.png", or_plot, units = "in", width = 5, height = 4, dpi = 300) 
+#ggsave("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/results/Aadrita_results/plots/OR_lhc-mr_reverse_dir.png", or_plot_reverse, units = "in", width = 5, height = 4, dpi = 300) 
 ```
-

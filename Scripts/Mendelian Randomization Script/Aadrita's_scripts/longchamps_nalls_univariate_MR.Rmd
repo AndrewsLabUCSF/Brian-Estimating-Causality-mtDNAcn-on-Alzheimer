@@ -109,20 +109,9 @@ Format_mtDNAcn_longchamps <- mtDNAcn_longchamps %>% format_data(.,
 Format_mtDNAcn_longchamps <- Format_mtDNAcn_longchamps %>%
 mutate(exposure = "mtDNA_longchamps")
 
-
-# longchamps Filter and Clumping
-options(ieugwasr_api = 'gwas-api.mrcieu.ac.uk/')
-
 mtDNAcn_longchamps_gws <- filter(Format_mtDNAcn_longchamps, pval.exposure < 5e-8)
 
 
-mtDNAcn_clump_longchamps <- clump_data(mtDNAcn_longchamps_gws, clump_kb = 10000,
-                            clump_r2 = 0.001,
-                            clump_p1 = 1,
-                            clump_p2 = 1,
-                            pop = "EUR"
-)%>% 
-  as_tibble()
 
 #Clump locally
 mtDNAcn_clump_longchamps <- mtDNAcn_longchamps_gws %>% 
@@ -146,37 +135,20 @@ mtDNAcn_clump_longchamps <- filter(mtDNAcn_longchamps_gws, !(chr.exposure == 19 
 
 ## Outcome: Nalls PD
 ```{r}
-outcome_path_nalls = "/wynton/group/andrews/data/summary_stats/resources/gwas/Nalls2019/nallsEtAl2019_allSamples_allVariants.tab"
+outcome_path = "/wynton/group/andrews/data/summary_stats/results/Nalls2019PD/Nalls2019PD.b37.chrall.tsv.gz"
 
-# Import Code for outcome GWAS 
-OutcomeAD_Nalls <- read_tsv(outcome_path_nalls,comment="#")
+outcome_ss_Nalls <- read_tsv(outcome_path) %>%
+  mutate(
+    N = 1460059,
+    Z = ES / SE, 
+    P = 10^(-LP)) %>%
+  dplyr::rename(CHROM = CHR, BETA = ES) %>% 
+  dplyr::select(DBSNP_ID, CHROM, POS, ALT, REF, AF, BETA, SE, Z, P, N) %>% 
+  dplyr::rename(SNP = DBSNP_ID)
 
-#Format using MungeSumStats
-OutcomeAD_Nalls_munge_sumstats <- OutcomeAD_Nalls %>%
-  #rename_with(~ "SNP", .cols = variant_id) %>%
-  #filter(nchar(effect_allele) == 1 & nchar(other_allele) == 1) %>% 
-  MungeSumstats::format_sumstats(
-    ., 
-    ref_genome = "GRCh37", 
-    # convert_ref_genome = "GRCh37", 
-    #dbSNP = 144, 
-    return_data = TRUE
-) %>%
-  as_tibble() %>%
-  filter(CHR %nin% c("X", "Y")) %>%
-  mutate(CHR = as.numeric(as.character(CHR)))
-
-#write_tsv(OutcomeAD_Nalls_munge_sumstats, "/wynton/group/andrews/users/achatterjee/data/OutcomeAD_Nalls_munge_sumstats.tsv")
-
-#Read munged sumstats in instead
-OutcomeAD_Nalls_munge_sumstats <- read_tsv("/wynton/group/andrews/data/summary_stats/results/Nalls2019_PD.tsv")
-
-#Make N column N_CAS+N_CON
-OutcomeAD_Nalls_munge_sumstats <- OutcomeAD_Nalls_munge_sumstats %>%
-  mutate(N = N_CAS + N_CON)
 
 # Rename right-side variables to match column names of your GWAS dataset 
-outcome_AD_Format_Nalls <- OutcomeAD_Nalls_munge_sumstats %>%
+outcome_AD_Format_Nalls <- outcome_ss_Nalls %>%
   format_data(.,
     type = "outcome",
     #snps = NULL,
@@ -184,13 +156,13 @@ outcome_AD_Format_Nalls <- OutcomeAD_Nalls_munge_sumstats %>%
     snp_col = "SNP",
     beta_col = "BETA",
     se_col = "SE",
-    eaf_col = "FRQ",
-    effect_allele_col = "A1",
-    other_allele_col = "A2",
+    eaf_col = "AF",
+    effect_allele_col = "ALT",
+    other_allele_col = "REF",
     pval_col = "P",
     samplesize_col = "N",
-    pos_col = "BP",
-    chr_col = "CHR",
+    pos_col = "POS",
+    chr_col = "CHROM",
     log_pval = FALSE
 ) %>%
   as_tibble()
@@ -209,7 +181,7 @@ outcome_clump <- semi_join(
 # Longchamps SNPs not present in outcome
 exp_snps_wo <- anti_join(
   mtDNAcn_clump_longchamps, outcome_AD_Format_Nalls, by = "SNP"
-) #89 SNPs
+) #84 SNPs
 
 # Use LDLinkR to identify proxy snps
 LDproxy_batch(exp_snps_wo$SNP, 
@@ -246,6 +218,41 @@ write_csv(harmonised_data, "/wynton/group/andrews/users/achatterjee/mtdnacn/Bria
 #Import harmonised dataset
 ```{r}
 harmonised_data <- read_csv("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/Harmonized_Datasets/longchamps_nalls_univariate_harmonised_data.csv")
+```
+
+#F statistic
+```{r}
+## F statistic. Burgess et al 2011
+f_stat = function(N, K, R){
+  f = ((N-K-1) / K) * (R/(1-R))
+  f
+}
+
+## Proportion of phenotypic variance explained by SNP
+## https://doi.org/10.1371/journal.pone.0120758.s001
+
+snp.pve <- function(eaf, beta, se, n){
+  (2*eaf*(1 - eaf)*beta^2) / (2 * beta * eaf * (1-eaf) + se^2 * 2 * n * eaf * (1-eaf))
+}
+
+f_res <- harmonised_data %>%
+  group_by(exposure, outcome) %>%
+  filter(mr_keep == TRUE) %>%
+  select(SNP, exposure, outcome, effect_allele.exposure, eaf.exposure, beta.exposure, se.exposure) %>%
+  mutate(
+    samplesize.exposure = 470579,
+    pve = snp.pve(eaf.exposure, beta.exposure, se.exposure, samplesize.exposure),
+    f = f_stat(samplesize.exposure, 1, pve),
+    # f = abs(beta.exposure)^2 / se.exposure^2
+  ) %>%
+  summarise(
+    pve = sum(pve, na.rm = T),
+    k = n(),
+    samplesize = max(samplesize.exposure),
+    f = mean(f, na.rm = T),
+  )
+f_res
+
 ```
 
 #MR
@@ -315,36 +322,4 @@ radial_res_outlier <- ivw_radial(radial_dat_outlier$mtDNA_longchamps.nalls_PD, a
 #Save MR results
 ```{r}
 write_csv(mr_res_outlier, "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/results/Aadrita_results/univariate_mr_results/longchamps_nalls.csv")
-```
-
-
-#MRLap (didn't do this)
-```{r}
-#remotes::install_github("n-mounier/MRlap")
-library(MRlap)
-
-#Reformatting exposure
-reformat_mtDNAcn_longchamps <- mtDNAcn_longchamps %>% 
-  rename(rsid = "DBSNP_ID", chr = "CHROM", ) %>% 
-  select(-OR)
-
-#Reformatting outcome
-outcome <- OutcomeAD_Nalls_munge_sumstats %>% 
-  dplyr::rename(rs = SNP, chr = BP) %>% 
-  filter(rs != 'rs429358')
-
-mrlap <- MRlap(exposure = reformat_mtDNAcn_longchamps,
-               exposure_name = "exposure",
-               outcome = outcome,
-               outcome_name = "outcome",
-               MR_pruning_dist = 10000,
-               MR_pruning_LD = 0.001,
-               ld = "/wynton/group/andrews/data/eur_w_ld_chr/",
-               hm3 = "/wynton/group/andrews/data/w_hm3.snplist")
-mrlap
-
-mrlap$MRcorrection$IVs
-
-filter(outcome, rs %in% mrlap$MRcorrection$IVs)
-
 ```
