@@ -401,6 +401,6 @@ combined_z_norm_info <- combined_z_norm_info %>%
 head(combined_z_norm_info)
 
 # Export the combined dataframe to a CSV file
-write_csv(combined_z_norm_info, "/wynton/group/andrews/users/achatterjee/prs/data/prs_results_mtdnacn_onto_AD.csv")
+write_csv(combined_z_norm_info, "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/prs/data/prs_results_mtdnacn_onto_AD.csv")
 ```
 

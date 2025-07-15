@@ -14,7 +14,7 @@ library(tidyr)
 
 #Load ADNI data
 ```{r}
-load("/wynton/group/andrews/users/achatterjee/prs/data/adni_mtcn.RData")
+load("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/prs/data/adni_mtcn.RData")
 #ls()
 
 head(dat_adni)

@@ -10,7 +10,7 @@ editor_options:
 
 #Read in dataframe
 ```{r}
-prs_results <- read_csv("/wynton/group/andrews/users/achatterjee/prs/data/prs_results_mtdnacn_onto_AD.csv")
+prs_results <- read_csv("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/prs/data/prs_results_mtdnacn_onto_AD.csv")
 
 prs_results$Exposure <- as.character(prs_results$Exposure)
 prs_results$Exposure <- factor(prs_results$Exposure, levels = sort(unique(prs_results$Exposure)))
