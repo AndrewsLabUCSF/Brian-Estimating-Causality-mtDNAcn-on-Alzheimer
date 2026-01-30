@@ -1,0 +1,399 @@
+Multivariate ld-score regression of 7 traits (Hagg_mtDNAcn.sumstats.gz Longchamps_mtDNAcn.sumstats.gz Gupta_mtDNAcn.sumstats.gz Chong_mtDNAcn.sumstats.gz AD_Kunkle.sumstats.gz AD_Bellenguez.sumstats.gz PD_Nalls.sumstats.gz) began at: 2025-02-11 14:41:44.744296
+Reading in LD scores
+Read in summary statistics [1/7] from: Hagg_mtDNAcn.sumstats.gz
+Out of 547137 SNPs, 545636 remain after merging with LD-score files
+Removing 0 SNPs with Chi^2 > 286.381; 545636 remain
+Read in summary statistics [2/7] from: Longchamps_mtDNAcn.sumstats.gz
+Out of 1076267 SNPs, 1073689 remain after merging with LD-score files
+Removing 14 SNPs with Chi^2 > 465.809; 1073675 remain
+Read in summary statistics [3/7] from: Gupta_mtDNAcn.sumstats.gz
+Out of 489836 SNPs, 488435 remain after merging with LD-score files
+Removing 19 SNPs with Chi^2 > 163.372; 488416 remain
+Read in summary statistics [4/7] from: Chong_mtDNAcn.sumstats.gz
+Out of 1072173 SNPs, 1069627 remain after merging with LD-score files
+Removing 3 SNPs with Chi^2 > 383.476; 1069624 remain
+Read in summary statistics [5/7] from: AD_Kunkle.sumstats.gz
+Out of 1072214 SNPs, 1069667 remain after merging with LD-score files
+Removing 44 SNPs with Chi^2 > 94.437; 1069623 remain
+Read in summary statistics [6/7] from: AD_Bellenguez.sumstats.gz
+Out of 1071601 SNPs, 1069046 remain after merging with LD-score files
+Removing 0 SNPs with Chi^2 > 487.511; 1069046 remain
+Read in summary statistics [7/7] from: PD_Nalls.sumstats.gz
+Out of 78094 SNPs, 77920 remain after merging with LD-score files
+Removing 0 SNPs with Chi^2 > 1460.059; 77920 remain
+          
+Estimating heritability [1/28] for: Hagg_mtDNAcn.sumstats.gz
+Heritability Results for trait: Hagg_mtDNAcn.sumstats.gz
+Mean Chi^2 across remaining SNPs: 1.2485
+Lambda GC: 1.153
+Intercept: 1.0721 (0.0166)
+Ratio: 0.29 (0.0668)
+Total Observed Scale h2: 0.0293 (0.0041)
+h2 Z: 7.13
+     
+Calculating genetic covariance [2/28] for traits: Hagg_mtDNAcn.sumstats.gz and Longchamps_mtDNAcn.sumstats.gz
+545104 SNPs remain after merging Hagg_mtDNAcn.sumstats.gz and Longchamps_mtDNAcn.sumstats.gz summary statistics
+Results for genetic covariance between: Hagg_mtDNAcn.sumstats.gz and Longchamps_mtDNAcn.sumstats.gz
+Mean Z*Z: 0.7511
+Cross trait Intercept: 0.5924 (0.0165)
+Total Observed Scale Genetic Covariance (g_cov): 0.0209 (0.0032)
+g_cov Z: 6.42
+g_cov P-value: 1.3541e-10
+     
+Calculating genetic covariance [3/28] for traits: Hagg_mtDNAcn.sumstats.gz and Gupta_mtDNAcn.sumstats.gz
+262068 SNPs remain after merging Hagg_mtDNAcn.sumstats.gz and Gupta_mtDNAcn.sumstats.gz summary statistics
+Results for genetic covariance between: Hagg_mtDNAcn.sumstats.gz and Gupta_mtDNAcn.sumstats.gz
+Mean Z*Z: 0.5066
+Cross trait Intercept: 0.3216 (0.0135)
+Total Observed Scale Genetic Covariance (g_cov): 0.0421 (0.005)
+g_cov Z: 8.41
+g_cov P-value: 3.9963e-17
+     
+Calculating genetic covariance [4/28] for traits: Hagg_mtDNAcn.sumstats.gz and Chong_mtDNAcn.sumstats.gz
+545533 SNPs remain after merging Hagg_mtDNAcn.sumstats.gz and Chong_mtDNAcn.sumstats.gz summary statistics
+Results for genetic covariance between: Hagg_mtDNAcn.sumstats.gz and Chong_mtDNAcn.sumstats.gz
+Mean Z*Z: 0.6701
+Cross trait Intercept: 0.535 (0.0159)
+Total Observed Scale Genetic Covariance (g_cov): 0.0193 (0.0036)
+g_cov Z: 5.32
+g_cov P-value: 1.053e-07
+     
+Calculating genetic covariance [5/28] for traits: Hagg_mtDNAcn.sumstats.gz and AD_Kunkle.sumstats.gz
+545551 SNPs remain after merging Hagg_mtDNAcn.sumstats.gz and AD_Kunkle.sumstats.gz summary statistics
+Results for genetic covariance between: Hagg_mtDNAcn.sumstats.gz and AD_Kunkle.sumstats.gz
+Mean Z*Z: 0.005
+Cross trait Intercept: -0.0036 (0.0074)
+Total Observed Scale Genetic Covariance (g_cov): 0.0037 (0.0037)
+g_cov Z: 1
+g_cov P-value: 0.31548
+     
+Calculating genetic covariance [6/28] for traits: Hagg_mtDNAcn.sumstats.gz and AD_Bellenguez.sumstats.gz
+539365 SNPs remain after merging Hagg_mtDNAcn.sumstats.gz and AD_Bellenguez.sumstats.gz summary statistics
+Results for genetic covariance between: Hagg_mtDNAcn.sumstats.gz and AD_Bellenguez.sumstats.gz
+Mean Z*Z: 0.0017
+Cross trait Intercept: -0.0131 (0.0085)
+Total Observed Scale Genetic Covariance (g_cov): 0.0025 (0.0018)
+g_cov Z: 1.43
+g_cov P-value: 0.15226
+     
+Calculating genetic covariance [7/28] for traits: Hagg_mtDNAcn.sumstats.gz and PD_Nalls.sumstats.gz
+41383 SNPs remain after merging Hagg_mtDNAcn.sumstats.gz and PD_Nalls.sumstats.gz summary statistics
+Results for genetic covariance between: Hagg_mtDNAcn.sumstats.gz and PD_Nalls.sumstats.gz
+Mean Z*Z: -0.0177
+Cross trait Intercept: -0.0184 (0.0164)
+Total Observed Scale Genetic Covariance (g_cov): 2e-04 (0.0016)
+g_cov Z: 0.12
+g_cov P-value: 0.90443
+          
+Estimating heritability [8/28] for: Longchamps_mtDNAcn.sumstats.gz
+Heritability Results for trait: Longchamps_mtDNAcn.sumstats.gz
+Mean Chi^2 across remaining SNPs: 1.3749
+Lambda GC: 1.1999
+Intercept: 1.0701 (0.0215)
+Ratio: 0.187 (0.0573)
+Total Observed Scale h2: 0.0315 (0.0044)
+h2 Z: 7.15
+     
+Calculating genetic covariance [9/28] for traits: Longchamps_mtDNAcn.sumstats.gz and Gupta_mtDNAcn.sumstats.gz
+484378 SNPs remain after merging Longchamps_mtDNAcn.sumstats.gz and Gupta_mtDNAcn.sumstats.gz summary statistics
+Results for genetic covariance between: Longchamps_mtDNAcn.sumstats.gz and Gupta_mtDNAcn.sumstats.gz
+Mean Z*Z: 0.5495
+Cross trait Intercept: 0.3676 (0.0155)
+Total Observed Scale Genetic Covariance (g_cov): 0.033 (0.0038)
+g_cov Z: 8.79
+g_cov P-value: 1.5315e-18
+     
+Calculating genetic covariance [10/28] for traits: Longchamps_mtDNAcn.sumstats.gz and Chong_mtDNAcn.sumstats.gz
+1054839 SNPs remain after merging Longchamps_mtDNAcn.sumstats.gz and Chong_mtDNAcn.sumstats.gz summary statistics
+Results for genetic covariance between: Longchamps_mtDNAcn.sumstats.gz and Chong_mtDNAcn.sumstats.gz
+Mean Z*Z: 1.0422
+Cross trait Intercept: 0.8095 (0.018)
+Total Observed Scale Genetic Covariance (g_cov): 0.0267 (0.0037)
+g_cov Z: 7.2
+g_cov P-value: 6.0487e-13
+     
+Calculating genetic covariance [11/28] for traits: Longchamps_mtDNAcn.sumstats.gz and AD_Kunkle.sumstats.gz
+1054807 SNPs remain after merging Longchamps_mtDNAcn.sumstats.gz and AD_Kunkle.sumstats.gz summary statistics
+Results for genetic covariance between: Longchamps_mtDNAcn.sumstats.gz and AD_Kunkle.sumstats.gz
+Mean Z*Z: -0.0116
+Cross trait Intercept: 0.002 (0.0069)
+Total Observed Scale Genetic Covariance (g_cov): -0.0031 (0.0027)
+g_cov Z: -1.16
+g_cov P-value: 0.2445
+     
+Calculating genetic covariance [12/28] for traits: Longchamps_mtDNAcn.sumstats.gz and AD_Bellenguez.sumstats.gz
+1058469 SNPs remain after merging Longchamps_mtDNAcn.sumstats.gz and AD_Bellenguez.sumstats.gz summary statistics
+Results for genetic covariance between: Longchamps_mtDNAcn.sumstats.gz and AD_Bellenguez.sumstats.gz
+Mean Z*Z: -0.0115
+Cross trait Intercept: -0.0013 (0.0071)
+Total Observed Scale Genetic Covariance (g_cov): -4e-04 (0.0013)
+g_cov Z: -0.31
+g_cov P-value: 0.75677
+     
+Calculating genetic covariance [13/28] for traits: Longchamps_mtDNAcn.sumstats.gz and PD_Nalls.sumstats.gz
+77278 SNPs remain after merging Longchamps_mtDNAcn.sumstats.gz and PD_Nalls.sumstats.gz summary statistics
+Results for genetic covariance between: Longchamps_mtDNAcn.sumstats.gz and PD_Nalls.sumstats.gz
+Mean Z*Z: 0.0056
+Cross trait Intercept: -0.0162 (0.0128)
+Total Observed Scale Genetic Covariance (g_cov): 0.0011 (0.0011)
+g_cov Z: 1.01
+g_cov P-value: 0.31442
+          
+Estimating heritability [14/28] for: Gupta_mtDNAcn.sumstats.gz
+Heritability Results for trait: Gupta_mtDNAcn.sumstats.gz
+Mean Chi^2 across remaining SNPs: 1.2813
+Lambda GC: 1.191
+Intercept: 1.0408 (0.0152)
+Ratio: 0.1451 (0.054)
+Total Observed Scale h2: 0.0742 (0.0065)
+h2 Z: 11.5
+     
+Calculating genetic covariance [15/28] for traits: Gupta_mtDNAcn.sumstats.gz and Chong_mtDNAcn.sumstats.gz
+474821 SNPs remain after merging Gupta_mtDNAcn.sumstats.gz and Chong_mtDNAcn.sumstats.gz summary statistics
+Results for genetic covariance between: Gupta_mtDNAcn.sumstats.gz and Chong_mtDNAcn.sumstats.gz
+Mean Z*Z: 0.4982
+Cross trait Intercept: 0.3437 (0.0135)
+Total Observed Scale Genetic Covariance (g_cov): 0.0307 (0.0041)
+g_cov Z: 7.52
+g_cov P-value: 5.3625e-14
+     
+Calculating genetic covariance [16/28] for traits: Gupta_mtDNAcn.sumstats.gz and AD_Kunkle.sumstats.gz
+474858 SNPs remain after merging Gupta_mtDNAcn.sumstats.gz and AD_Kunkle.sumstats.gz summary statistics
+Results for genetic covariance between: Gupta_mtDNAcn.sumstats.gz and AD_Kunkle.sumstats.gz
+Mean Z*Z: -7e-04
+Cross trait Intercept: 0.0065 (0.0076)
+Total Observed Scale Genetic Covariance (g_cov): -0.0027 (0.0051)
+g_cov Z: -0.519
+g_cov P-value: 0.60353
+     
+Calculating genetic covariance [17/28] for traits: Gupta_mtDNAcn.sumstats.gz and AD_Bellenguez.sumstats.gz
+480775 SNPs remain after merging Gupta_mtDNAcn.sumstats.gz and AD_Bellenguez.sumstats.gz summary statistics
+Results for genetic covariance between: Gupta_mtDNAcn.sumstats.gz and AD_Bellenguez.sumstats.gz
+Mean Z*Z: -8e-04
+Cross trait Intercept: -5e-04 (0.0067)
+Total Observed Scale Genetic Covariance (g_cov): 4e-04 (0.0021)
+g_cov Z: 0.198
+g_cov P-value: 0.84287
+     
+Calculating genetic covariance [18/28] for traits: Gupta_mtDNAcn.sumstats.gz and PD_Nalls.sumstats.gz
+73494 SNPs remain after merging Gupta_mtDNAcn.sumstats.gz and PD_Nalls.sumstats.gz summary statistics
+Results for genetic covariance between: Gupta_mtDNAcn.sumstats.gz and PD_Nalls.sumstats.gz
+Mean Z*Z: 0.0062
+Cross trait Intercept: -0.0187 (0.0136)
+Total Observed Scale Genetic Covariance (g_cov): 0.0028 (0.0018)
+g_cov Z: 1.53
+g_cov P-value: 0.12679
+          
+Estimating heritability [19/28] for: Chong_mtDNAcn.sumstats.gz
+Heritability Results for trait: Chong_mtDNAcn.sumstats.gz
+Mean Chi^2 across remaining SNPs: 1.2761
+Lambda GC: 1.1515
+Intercept: 1.0474 (0.0176)
+Ratio: 0.1717 (0.0636)
+Total Observed Scale h2: 0.029 (0.0042)
+h2 Z: 6.9
+     
+Calculating genetic covariance [20/28] for traits: Chong_mtDNAcn.sumstats.gz and AD_Kunkle.sumstats.gz
+1069369 SNPs remain after merging Chong_mtDNAcn.sumstats.gz and AD_Kunkle.sumstats.gz summary statistics
+Results for genetic covariance between: Chong_mtDNAcn.sumstats.gz and AD_Kunkle.sumstats.gz
+Mean Z*Z: -0.0019
+Cross trait Intercept: -0.0045 (0.0066)
+Total Observed Scale Genetic Covariance (g_cov): 0.0013 (0.0029)
+g_cov Z: 0.471
+g_cov P-value: 0.63768
+     
+Calculating genetic covariance [21/28] for traits: Chong_mtDNAcn.sumstats.gz and AD_Bellenguez.sumstats.gz
+1045641 SNPs remain after merging Chong_mtDNAcn.sumstats.gz and AD_Bellenguez.sumstats.gz summary statistics
+Results for genetic covariance between: Chong_mtDNAcn.sumstats.gz and AD_Bellenguez.sumstats.gz
+Mean Z*Z: -0.0086
+Cross trait Intercept: -0.0019 (0.0076)
+Total Observed Scale Genetic Covariance (g_cov): 1e-04 (0.0014)
+g_cov Z: 0.0537
+g_cov P-value: 0.95719
+     
+Calculating genetic covariance [22/28] for traits: Chong_mtDNAcn.sumstats.gz and PD_Nalls.sumstats.gz
+75977 SNPs remain after merging Chong_mtDNAcn.sumstats.gz and PD_Nalls.sumstats.gz summary statistics
+Results for genetic covariance between: Chong_mtDNAcn.sumstats.gz and PD_Nalls.sumstats.gz
+Mean Z*Z: 0.0021
+Cross trait Intercept: 0.0107 (0.0126)
+Total Observed Scale Genetic Covariance (g_cov): -0.001 (0.0012)
+g_cov Z: -0.807
+g_cov P-value: 0.41976
+          
+Estimating heritability [23/28] for: AD_Kunkle.sumstats.gz
+     
+Please note that the results initially printed to the screen and log file reflect the NON-liability h2 and cov_g. However, a liability conversion is being used for trait AD_Kunkle.sumstats.gz when creating the genetic covariance matrix used as input for Genomic SEM and liability scale results are printed at the end of the log file.
+     
+Heritability Results for trait: AD_Kunkle.sumstats.gz
+Mean Chi^2 across remaining SNPs: 1.1165
+Lambda GC: 1.0976
+Intercept: 1.0334 (0.0157)
+Ratio: 0.2868 (0.1347)
+Total Observed Scale h2: 0.0616 (0.013)
+h2 Z: 4.72
+     
+Calculating genetic covariance [24/28] for traits: AD_Kunkle.sumstats.gz and AD_Bellenguez.sumstats.gz
+1045718 SNPs remain after merging AD_Kunkle.sumstats.gz and AD_Bellenguez.sumstats.gz summary statistics
+Results for genetic covariance between: AD_Kunkle.sumstats.gz and AD_Bellenguez.sumstats.gz
+Mean Z*Z: 0.3393
+Cross trait Intercept: 0.2175 (0.017)
+Total Observed Scale Genetic Covariance (g_cov): 0.0328 (0.0051)
+g_cov Z: 6.44
+g_cov P-value: 1.1707e-10
+     
+Calculating genetic covariance [25/28] for traits: AD_Kunkle.sumstats.gz and PD_Nalls.sumstats.gz
+75982 SNPs remain after merging AD_Kunkle.sumstats.gz and PD_Nalls.sumstats.gz summary statistics
+Results for genetic covariance between: AD_Kunkle.sumstats.gz and PD_Nalls.sumstats.gz
+Mean Z*Z: 0.0163
+Cross trait Intercept: 0.0236 (0.0118)
+Total Observed Scale Genetic Covariance (g_cov): -0.0012 (0.0023)
+g_cov Z: -0.5
+g_cov P-value: 0.61722
+          
+Estimating heritability [26/28] for: AD_Bellenguez.sumstats.gz
+     
+Please note that the results initially printed to the screen and log file reflect the NON-liability h2 and cov_g. However, a liability conversion is being used for trait AD_Bellenguez.sumstats.gz when creating the genetic covariance matrix used as input for Genomic SEM and liability scale results are printed at the end of the log file.
+     
+Heritability Results for trait: AD_Bellenguez.sumstats.gz
+Mean Chi^2 across remaining SNPs: 1.2866
+Lambda GC: 1.2091
+Intercept: 1.0897 (0.0249)
+Ratio: 0.3129 (0.087)
+Total Observed Scale h2: 0.0193 (0.0029)
+h2 Z: 6.71
+     
+Calculating genetic covariance [27/28] for traits: AD_Bellenguez.sumstats.gz and PD_Nalls.sumstats.gz
+76790 SNPs remain after merging AD_Bellenguez.sumstats.gz and PD_Nalls.sumstats.gz summary statistics
+Results for genetic covariance between: AD_Bellenguez.sumstats.gz and PD_Nalls.sumstats.gz
+Mean Z*Z: 0.0543
+Cross trait Intercept: 0.0027 (0.0139)
+Total Observed Scale Genetic Covariance (g_cov): 0.0035 (0.0011)
+g_cov Z: 3.17
+g_cov P-value: 0.0015136
+          
+Estimating heritability [28/28] for: PD_Nalls.sumstats.gz
+     
+Please note that the results initially printed to the screen and log file reflect the NON-liability h2 and cov_g. However, a liability conversion is being used for trait PD_Nalls.sumstats.gz when creating the genetic covariance matrix used as input for Genomic SEM and liability scale results are printed at the end of the log file.
+     
+Heritability Results for trait: PD_Nalls.sumstats.gz
+Mean Chi^2 across remaining SNPs: 1.3948
+Lambda GC: 1.2177
+Intercept: 0.9817 (0.023)
+Ratio: -0.0464 (0.0584)
+Total Observed Scale h2: 0.0142 (0.0015)
+h2 Z: 9.77
+     
+      
+Liability Scale Results
+     
+Liability scale results for: Hagg_mtDNAcn
+Total Liability Scale h2: 0.0293 (0.0041)
+Total Liability Scale Genetic Covariance between Hagg_mtDNAcn and Longchamps_mtDNAcn: 0.0209 (0.0032)
+     
+Total Liability Scale Genetic Covariance between Hagg_mtDNAcn and Gupta_mtDNAcn: 0.0421 (0.005)
+     
+Total Liability Scale Genetic Covariance between Hagg_mtDNAcn and Chong_mtDNAcn: 0.0193 (0.0036)
+     
+Total Liability Scale Genetic Covariance between Hagg_mtDNAcn and AD_Kunkle: 0.0047 (0.0046)
+     
+Total Liability Scale Genetic Covariance between Hagg_mtDNAcn and AD_Bellenguez: 0.0044 (0.0031)
+     
+Total Liability Scale Genetic Covariance between Hagg_mtDNAcn and PD_Nalls: 4e-04 (0.0036)
+     
+     
+Liability scale results for: Longchamps_mtDNAcn
+Total Liability Scale h2: 0.0315 (0.0044)
+Total Liability Scale Genetic Covariance between Longchamps_mtDNAcn and Gupta_mtDNAcn: 0.033 (0.0038)
+     
+Total Liability Scale Genetic Covariance between Longchamps_mtDNAcn and Chong_mtDNAcn: 0.0267 (0.0037)
+     
+Total Liability Scale Genetic Covariance between Longchamps_mtDNAcn and AD_Kunkle: -0.004 (0.0034)
+     
+Total Liability Scale Genetic Covariance between Longchamps_mtDNAcn and AD_Bellenguez: -7e-04 (0.0023)
+     
+Total Liability Scale Genetic Covariance between Longchamps_mtDNAcn and PD_Nalls: 0.0025 (0.0025)
+     
+     
+Liability scale results for: Gupta_mtDNAcn
+Total Liability Scale h2: 0.0742 (0.0065)
+Total Liability Scale Genetic Covariance between Gupta_mtDNAcn and Chong_mtDNAcn: 0.0307 (0.0041)
+     
+Total Liability Scale Genetic Covariance between Gupta_mtDNAcn and AD_Kunkle: -0.0034 (0.0065)
+     
+Total Liability Scale Genetic Covariance between Gupta_mtDNAcn and AD_Bellenguez: 7e-04 (0.0037)
+     
+Total Liability Scale Genetic Covariance between Gupta_mtDNAcn and PD_Nalls: 0.0063 (0.0041)
+     
+     
+Liability scale results for: Chong_mtDNAcn
+Total Liability Scale h2: 0.029 (0.0042)
+Total Liability Scale Genetic Covariance between Chong_mtDNAcn and AD_Kunkle: 0.0017 (0.0036)
+     
+Total Liability Scale Genetic Covariance between Chong_mtDNAcn and AD_Bellenguez: 1e-04 (0.0025)
+     
+Total Liability Scale Genetic Covariance between Chong_mtDNAcn and PD_Nalls: -0.0022 (0.0027)
+     
+     
+Liability scale results for: AD_Kunkle
+Total Liability Scale h2: 0.0971 (0.0206)
+Total Liability Scale Genetic Covariance between AD_Kunkle and AD_Bellenguez: 0.072 (0.0112)
+     
+Total Liability Scale Genetic Covariance between AD_Kunkle and PD_Nalls: -0.0033 (0.0066)
+     
+     
+Liability scale results for: AD_Bellenguez
+Total Liability Scale h2: 0.0589 (0.0088)
+Total Liability Scale Genetic Covariance between AD_Bellenguez and PD_Nalls: 0.0136 (0.0043)
+     
+     
+Liability scale results for: PD_Nalls
+Total Liability Scale h2: 0.071 (0.0073)
+     
+      
+Genetic Correlation Results
+Genetic Correlation between Hagg_mtDNAcn and Longchamps_mtDNAcn: 0.6877 (0.1071)
+     
+Genetic Correlation between Hagg_mtDNAcn and Gupta_mtDNAcn: 0.9038 (0.1074)
+     
+Genetic Correlation between Hagg_mtDNAcn and Chong_mtDNAcn: 0.6625 (0.1246)
+     
+Genetic Correlation between Hagg_mtDNAcn and AD_Kunkle: 0.0875 (0.0872)
+     
+Genetic Correlation between Hagg_mtDNAcn and AD_Bellenguez: 0.1069 (0.0747)
+     
+Genetic Correlation between Hagg_mtDNAcn and PD_Nalls: 0.0094 (0.0787)
+     
+Genetic Correlation between Longchamps_mtDNAcn and Gupta_mtDNAcn: 0.6835 (0.0778)
+     
+Genetic Correlation between Longchamps_mtDNAcn and Chong_mtDNAcn: 0.8836 (0.1227)
+     
+Genetic Correlation between Longchamps_mtDNAcn and AD_Kunkle: -0.0715 (0.0614)
+     
+Genetic Correlation between Longchamps_mtDNAcn and AD_Bellenguez: -0.0162 (0.0525)
+     
+Genetic Correlation between Longchamps_mtDNAcn and PD_Nalls: 0.0533 (0.053)
+     
+Genetic Correlation between Gupta_mtDNAcn and Chong_mtDNAcn: 0.6628 (0.0881)
+     
+Genetic Correlation between Gupta_mtDNAcn and AD_Kunkle: -0.0395 (0.076)
+     
+Genetic Correlation between Gupta_mtDNAcn and AD_Bellenguez: 0.011 (0.0557)
+     
+Genetic Correlation between Gupta_mtDNAcn and PD_Nalls: 0.0867 (0.0568)
+     
+Genetic Correlation between Chong_mtDNAcn and AD_Kunkle: 0.0319 (0.0677)
+     
+Genetic Correlation between Chong_mtDNAcn and AD_Bellenguez: 0.0033 (0.0608)
+     
+Genetic Correlation between Chong_mtDNAcn and PD_Nalls: -0.0481 (0.0596)
+     
+Genetic Correlation between AD_Kunkle and AD_Bellenguez: 0.9523 (0.1478)
+     
+Genetic Correlation between AD_Kunkle and PD_Nalls: -0.0395 (0.079)
+     
+Genetic Correlation between AD_Bellenguez and PD_Nalls: 0.2103 (0.0663)
+     
+     
+LDSC finished running at 2025-02-11 14:43:11.568137
+Running LDSC for all files took 1 minutes and 26 seconds
+     
