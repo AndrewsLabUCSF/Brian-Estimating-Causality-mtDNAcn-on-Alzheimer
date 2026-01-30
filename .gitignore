@@ -55,4 +55,9 @@ Scripts/*.html
 *_with_N.tsv
 *.log
 *.png
-data/genetic_correlations/
+
+data/genetic_correlations/*
+
+# BUT allow small summary outputs
+!data/genetic_correlations/genetic_cor_df.tsv
+!data/genetic_correlations/gnova_genetic_cor_edited.tsv
