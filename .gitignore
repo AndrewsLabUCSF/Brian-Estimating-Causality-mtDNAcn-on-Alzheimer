@@ -51,3 +51,8 @@ data/**/*.csv
 *.html
 Scripts/*.html
 
+*.sumstats.gz
+*_with_N.tsv
+*.log
+*.png
+data/genetic_correlations/
