@@ -61,3 +61,6 @@ data/genetic_correlations/*
 !data/genetic_correlations/genetic_cor_df.tsv
 !data/genetic_correlations/gnova_genetic_cor_edited.tsv
 !data/genetic_correlations/*.log
+!data/Harmonized_Datasets/*.csv
+!data/Harmonized_Datasets/*.xlsx
+!data/Harmonized_Datasets/*.rds
