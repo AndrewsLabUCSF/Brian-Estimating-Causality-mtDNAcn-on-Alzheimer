@@ -1,0 +1,35 @@
+Munging 2 summary statistics files: Longchamps_mtDNAcn_Apoe_removed_Nalls_PD, started at 2025-06-10 14:41:21.722392
+     
+Interpreting the SNP column in Longchamps_mtDNAcn_Apoe_removed as the SNP column.
+Interpreting the BETA column as the effect column in Longchamps_mtDNAcn_Apoe_removed.
+Interpreting the SE column as the SE column in Longchamps_mtDNAcn_Apoe_removed.
+Interpreting the Z column in Longchamps_mtDNAcn_Apoe_removed as the standardised effect column.
+Interpreting the P column in Longchamps_mtDNAcn_Apoe_removed as the P-value column.
+Interpreting the ALT column in Longchamps_mtDNAcn_Apoe_removed as the effect allele column.
+Interpreting the REF column in Longchamps_mtDNAcn_Apoe_removed as the alternate allele column.
+Interpreting the N column as the sample size column in Longchamps_mtDNAcn_Apoe_removed.
+Interpreting the CHROM column in Longchamps_mtDNAcn_Apoe_removed as the chromosome column.
+Interpreting the POS column as the base pair/position column in Longchamps_mtDNAcn_Apoe_removed.
+Interpreting the SNP column in Nalls_PD as the SNP column.
+Interpreting the BETA column as the effect column in Nalls_PD.
+Interpreting the SE column as the SE column in Nalls_PD.
+Interpreting the Z column in Nalls_PD as the standardised effect column.
+Interpreting the P column in Nalls_PD as the P-value column.
+Interpreting the ALT column in Nalls_PD as the effect allele column.
+Interpreting the REF column in Nalls_PD as the alternate allele column.
+Interpreting the N column as the sample size column in Nalls_PD.
+Interpreting the CHROM column in Nalls_PD as the chromosome column.
+Interpreting the POS column as the base pair/position column in Nalls_PD.
+Munging LD score files, started at 2025-06-10 14:41:30.573122
+     
+Interpreting the RS column in LDfile as the SNP column.
+Interpreting the CHR column as the chromosome column in LDfile.
+Interpreting the POS column as the base pair/position column in LDfile.
+Interpreting the LDSC column as the LD score column in LDfile.
+Interpreting the WEIGHT column as the weight column in LDfile.
+Interpreting the RSID column as the SNP column in rhofile.
+Interpreting the CHR column as the chromosome column in rhofile.
+Interpreting the POS column as the base pair/position column in rhofile.
+Interpreting the piK column as the proportion of effective SNPs in the local-LD distribution column in rhofile.
+Interpreting the sigK column as the variance of the local-LD distribution column in rhofile.
+Interpreting the m_local column as the number of SNPs used to calculate the local-LD distribution column in rhofile.

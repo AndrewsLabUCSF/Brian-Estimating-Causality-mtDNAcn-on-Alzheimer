@@ -1,0 +1,8 @@
+id.exposure,id.outcome,outcome,exposure,method,nsnp,b,se,pval
+wavJY0,Zceh1F,kunkle,mtDNA_longchamps,Maximum likelihood,89,0.11241414778882931,0.08069847127064872,0.1636153790659928
+wavJY0,Zceh1F,kunkle,mtDNA_longchamps,MR Egger,89,0.2044633164816918,0.1875405252197304,0.27861992007616465
+wavJY0,Zceh1F,kunkle,mtDNA_longchamps,Weighted median,89,0.16813606339922213,0.12721257383383797,0.1862701516530385
+wavJY0,Zceh1F,kunkle,mtDNA_longchamps,Inverse variance weighted (fixed effects),89,0.11003316371456644,0.08009883406873212,0.16952942655675207
+wavJY0,Zceh1F,kunkle,mtDNA_longchamps,Inverse variance weighted (multiplicative random effects),89,0.11003316371456644,0.09278714301278974,0.23567502807567933
+wavJY0,Zceh1F,kunkle,mtDNA_longchamps,Simple mode,89,-0.12365354908499704,0.253465994912215,0.6268689148043245
+wavJY0,Zceh1F,kunkle,mtDNA_longchamps,Weighted mode,89,0.05900866695274587,0.1604276930359489,0.7138899605765305

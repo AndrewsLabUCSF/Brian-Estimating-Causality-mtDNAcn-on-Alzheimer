@@ -1,0 +1,35 @@
+Multivariate ld-score regression of 2 traits (Longchamps_mtDNAcn_Apoe_removed.sumstats.gz Nalls_PD.sumstats.gz) began at: 2025-06-10 14:42:42.722021
+Reading in LD scores
+Read in summary statistics [1/2] from: Longchamps_mtDNAcn_Apoe_removed.sumstats.gz
+Out of 12143 SNPs, 12097 remain after merging with LD-score files
+Removing 0 SNPs with Chi^2 > 465.809; 12097 remain
+Read in summary statistics [2/2] from: Nalls_PD.sumstats.gz
+Out of 12143 SNPs, 12097 remain after merging with LD-score files
+Removing 0 SNPs with Chi^2 > 1460.059; 12097 remain
+          
+Estimating heritability [1/3] for: Longchamps_mtDNAcn_Apoe_removed.sumstats.gz
+Heritability Results for trait: Longchamps_mtDNAcn_Apoe_removed.sumstats.gz
+Mean Chi^2 across remaining SNPs: 1.3983
+Lambda GC: 1.1999
+Intercept: 1.1683 (0.0672)
+Ratio: 0.4224 (0.1688)
+Total Observed Scale h2: 0.0206 (0.0079)
+h2 Z: 2.6
+     
+Calculating genetic covariance [2/3] for traits: Longchamps_mtDNAcn_Apoe_removed.sumstats.gz and Nalls_PD.sumstats.gz
+12097 SNPs remain after merging Longchamps_mtDNAcn_Apoe_removed.sumstats.gz and Nalls_PD.sumstats.gz summary statistics
+Results for genetic covariance between: Longchamps_mtDNAcn_Apoe_removed.sumstats.gz and Nalls_PD.sumstats.gz
+Mean Z*Z: 0.0016
+Cross trait Intercept: 0.0327 (0.0335)
+Total Observed Scale Genetic Covariance (g_cov): -0.0015 (0.0022)
+g_cov Z: -0.674
+g_cov P-value: 0.5003
+          
+Estimating heritability [3/3] for: Nalls_PD.sumstats.gz
+Heritability Results for trait: Nalls_PD.sumstats.gz
+Mean Chi^2 across remaining SNPs: 1.4552
+Lambda GC: 1.261
+Intercept: 0.9174 (0.0405)
+Ratio: -0.1815 (0.0889)
+Total Observed Scale h2: 0.0173 (0.0021)
+h2 Z: 8.31

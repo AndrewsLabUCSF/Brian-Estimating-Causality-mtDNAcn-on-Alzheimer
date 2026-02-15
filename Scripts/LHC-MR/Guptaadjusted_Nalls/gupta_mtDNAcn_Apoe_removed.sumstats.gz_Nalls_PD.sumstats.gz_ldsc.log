@@ -1,0 +1,44 @@
+Multivariate ld-score regression of 2 traits (gupta_mtDNAcn_Apoe_removed.sumstats.gz Nalls_PD.sumstats.gz) began at: 2025-05-22 14:55:51.932706
+Reading in LD scores
+Read in summary statistics [1/2] from: gupta_mtDNAcn_Apoe_removed.sumstats.gz
+Out of 5850 SNPs, 5827 remain after merging with LD-score files
+Removing 0 SNPs with Chi^2 > 163.372; 5827 remain
+Read in summary statistics [2/2] from: Nalls_PD.sumstats.gz
+Out of 5850 SNPs, 5827 remain after merging with LD-score files
+Removing 0 SNPs with Chi^2 > 1460.059; 5827 remain
+          
+Estimating heritability [1/3] for: gupta_mtDNAcn_Apoe_removed.sumstats.gz
+Heritability Results for trait: gupta_mtDNAcn_Apoe_removed.sumstats.gz
+Mean Chi^2 across remaining SNPs: 1.321
+Lambda GC: 1.1829
+Intercept: 1.1722 (0.0631)
+Ratio: 0.5364 (0.1965)
+Total Observed Scale h2: 0.0411 (0.0221)
+h2 Z: 1.86
+     
+Calculating genetic covariance [2/3] for traits: gupta_mtDNAcn_Apoe_removed.sumstats.gz and Nalls_PD.sumstats.gz
+5827 SNPs remain after merging gupta_mtDNAcn_Apoe_removed.sumstats.gz and Nalls_PD.sumstats.gz summary statistics
+Results for genetic covariance between: gupta_mtDNAcn_Apoe_removed.sumstats.gz and Nalls_PD.sumstats.gz
+Mean Z*Z: 0.014
+Cross trait Intercept: 0.1231 (0.0407)
+Total Observed Scale Genetic Covariance (g_cov): -0.0113 (0.0046)
+g_cov Z: -2.46
+g_cov P-value: 0.014029
+          
+Estimating heritability [3/3] for: Nalls_PD.sumstats.gz
+Heritability Results for trait: Nalls_PD.sumstats.gz
+Mean Chi^2 across remaining SNPs: 1.4188
+Lambda GC: 1.2247
+Intercept: 0.9201 (0.0603)
+Ratio: -0.1909 (0.144)
+Total Observed Scale h2: 0.0168 (0.0028)
+h2 Z: 6.01
+     
+      
+Genetic Correlation Results
+Genetic Correlation between gupta_mtDNAcn_Apoe_removed.sumstats.gz and Nalls_PD.sumstats.gz: -0.4301 (0.1751)
+     
+     
+LDSC finished running at 2025-05-22 14:56:03.107942
+Running LDSC for all files took 0 minutes and 11 seconds
+     

@@ -1,0 +1,5 @@
+id.exposure,id.outcome,outcome,exposure,method,nsnp,b,se,pval
+Lu2zct,MP6zfE,bellenguez,mtDNA_longchamps,Inverse variance weighted (fixed effects),88,0.033080023238618,0.045975166578644644,0.47182096721926037
+Lu2zct,MP6zfE,bellenguez,mtDNA_longchamps,MR Egger,88,0.1460426977886826,0.12250429396992703,0.23648418879345712
+Lu2zct,MP6zfE,bellenguez,mtDNA_longchamps,Weighted median,88,0.09968289095314137,0.07710959418007327,0.19609994760470756
+Lu2zct,MP6zfE,bellenguez,mtDNA_longchamps,Weighted mode,88,0.10075512998794256,0.09552247156838464,0.294446697685651

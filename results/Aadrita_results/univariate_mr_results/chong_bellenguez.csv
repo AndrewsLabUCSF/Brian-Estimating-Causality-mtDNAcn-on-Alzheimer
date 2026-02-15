@@ -1,0 +1,5 @@
+id.exposure,id.outcome,outcome,exposure,method,nsnp,b,se,pval
+XSb7dg,Qn4YBJ,bellenguez,mtDNA_chong,Inverse variance weighted (fixed effects),59,0.038975654558030606,0.05443992550798398,0.47402914344745273
+XSb7dg,Qn4YBJ,bellenguez,mtDNA_chong,MR Egger,59,0.046320224241381096,0.14966592729366693,0.7580768067505425
+XSb7dg,Qn4YBJ,bellenguez,mtDNA_chong,Weighted median,59,0.12298221210604005,0.08870043968598912,0.16559753988405707
+XSb7dg,Qn4YBJ,bellenguez,mtDNA_chong,Weighted mode,59,0.17951543732044728,0.1340607768634676,0.18577558453067264

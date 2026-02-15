@@ -1,0 +1,193 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# Libraries
+```{r}
+library(dplyr)
+library(readr)
+library(broom)
+library(ggplot2)
+library(tidyr)
+```
+
+#Load ADNI data
+```{r}
+load("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/prs/data/adni_mtcn.RData")
+#ls()
+
+head(dat_adni)
+head(dat_adni_unrel)
+```
+
+
+#CHONG mtdnacn
+
+## Data Preparation
+```{r}
+fam_file <- "/wynton/group/andrews/users/rakshyasharma/PRS/PRS-CS-Auto/resources/ADGC/adgc.fam"
+covar_file <- "/wynton/group/andrews/data/adgc/ADGCdatasets/covar_covariates.tsv"
+base_dir <- "/wynton/group/andrews/users/rakshyasharma/pgsc_calc/adgc/results/Aadrita/Chong2022mtdnacn_eur/adgc"
+
+pca_file <- file.path(base_dir, "score", "adgc_popsimilarity.txt.gz")
+prs_file <- file.path(base_dir, "score", "adgc_pgs.txt.gz")
+```
+
+##Clean data
+```{r}
+#Clean PRS data
+prs_data <- read.table(prs_file, header = TRUE)
+prs_data <- prs_data %>% 
+  distinct(IID, .keep_all = TRUE) %>% 
+  mutate(IID = as.character(IID))
+
+#Clean ADNI data
+dat_adni_unrel_new <- dat_adni_unrel %>%
+  mutate(subject_id = str_extract(ADNI.ID, "ADNI_(\\d{3})_S_(\\d{4})") %>% 
+                     str_replace_all("ADNI_|_S_", "") ) %>% 
+  select(subject_id, everything())
+```
+
+##Combine PRS with ADNI data
+```{r}
+matched_adni_prs <- dat_adni_unrel_new %>%
+  inner_join(prs_data, by = c("subject_id" = "IID"))
+
+#See which ones aren't matching
+not_matched <- dat_adni_unrel %>%
+  anti_join(prs_data, by = c("subject_id" = "IID"))
+
+```
+
+##Model
+```{r}
+model_chong <- lm(mtcn ~ Z_norm2 + Sex + Age + DX.bl+ apoe4dos + 
+                        PC1 + PC2 + PC3 + PC4,
+                      data = matched_adni_prs)
+summary(model_chong)
+```
+
+#LONGCHAMPS mtdnacn
+
+## Data Preparation
+```{r}
+fam_file <- "/wynton/group/andrews/users/rakshyasharma/PRS/PRS-CS-Auto/resources/ADGC/adgc.fam"
+covar_file <- "/wynton/group/andrews/data/adgc/ADGCdatasets/covar_covariates.tsv"
+base_dir <- "/wynton/group/andrews/users/rakshyasharma/pgsc_calc/adgc/results/Aadrita/Longchamps2021mtdnacn/adgc"
+
+pca_file <- file.path(base_dir, "score", "adgc_popsimilarity.txt.gz")
+prs_file <- file.path(base_dir, "score", "adgc_pgs.txt.gz")
+```
+
+##Clean data
+```{r}
+#Clean PRS data
+prs_data <- read.table(prs_file, header = TRUE)
+prs_data <- prs_data %>% 
+  distinct(IID, .keep_all = TRUE) %>% 
+  mutate(IID = as.character(IID))
+
+#Clean ADNI data
+dat_adni <- dat_adni %>%
+  mutate(subject_id = str_extract(ADNI.ID, "ADNI_(\\d{3})_S_(\\d{4})") %>% 
+                     str_replace_all("ADNI_|_S_", "") ) %>% 
+  select(subject_id, everything())
+```
+
+##Combine PRS with ADNI data
+```{r}
+matched_adni_prs <- dat_adni %>%
+  inner_join(prs_data, by = c("subject_id" = "IID"))
+```
+
+##Model
+```{r}
+model_longchamps <- lm(mtcn ~ Z_norm2 + Sex + DX.bl+ Age + apoe4dos + 
+                        PC1 + PC2 + PC3 + PC4,
+                      data = matched_adni_prs)
+summary(model_longchamps)
+```
+
+#HAGG mtdnacn
+
+## Data Preparation
+```{r}
+fam_file <- "/wynton/group/andrews/users/rakshyasharma/PRS/PRS-CS-Auto/resources/ADGC/adgc.fam"
+covar_file <- "/wynton/group/andrews/data/adgc/ADGCdatasets/covar_covariates.tsv"
+base_dir <- "/wynton/group/andrews/users/rakshyasharma/pgsc_calc/adgc/results/Aadrita/Hagg2020mtdnacn/adgc"
+
+pca_file <- file.path(base_dir, "score", "adgc_popsimilarity.txt.gz")
+prs_file <- file.path(base_dir, "score", "adgc_pgs.txt.gz")
+```
+
+##Clean data
+```{r}
+#Clean PRS data
+prs_data <- read.table(prs_file, header = TRUE)
+prs_data <- prs_data %>% 
+  distinct(IID, .keep_all = TRUE) %>% 
+  mutate(IID = as.character(IID))
+
+#Clean ADNI data
+dat_adni <- dat_adni %>%
+  mutate(subject_id = str_extract(ADNI.ID, "ADNI_(\\d{3})_S_(\\d{4})") %>% 
+                     str_replace_all("ADNI_|_S_", "") ) %>% 
+  select(subject_id, everything())
+```
+
+##Combine PRS with ADNI data
+```{r}
+matched_adni_prs <- dat_adni %>%
+  inner_join(prs_data, by = c("subject_id" = "IID"))
+```
+
+##Model
+```{r}
+model_hagg <- lm(mtcn ~ Z_norm2 + Sex + DX.bl+ Age + apoe4dos + 
+                        PC1 + PC2 + PC3 + PC4,
+                      data = matched_adni_prs)
+summary(model_hagg)
+```
+
+#GUPTA mtdnacn
+
+## Data Preparation
+```{r}
+fam_file <- "/wynton/group/andrews/users/rakshyasharma/PRS/PRS-CS-Auto/resources/ADGC/adgc.fam"
+covar_file <- "/wynton/group/andrews/data/adgc/ADGCdatasets/covar_covariates.tsv"
+base_dir <- "/wynton/group/andrews/users/rakshyasharma/pgsc_calc/adgc/results/Aadrita/Gupta2023mtDNAcn/adgc"
+
+pca_file <- file.path(base_dir, "score", "adgc_popsimilarity.txt.gz")
+prs_file <- file.path(base_dir, "score", "adgc_pgs.txt.gz")
+```
+
+##Clean data
+```{r}
+#Clean PRS data
+prs_data <- read.table(prs_file, header = TRUE)
+prs_data <- prs_data %>% 
+  distinct(IID, .keep_all = TRUE) %>% 
+  mutate(IID = as.character(IID))
+
+#Clean ADNI data
+dat_adni <- dat_adni %>%
+  mutate(subject_id = str_extract(ADNI.ID, "ADNI_(\\d{3})_S_(\\d{4})") %>% 
+                     str_replace_all("ADNI_|_S_", "") ) %>% 
+  select(subject_id, everything())
+```
+
+##Combine PRS with ADNI data
+```{r}
+matched_adni_prs <- dat_adni %>%
+  inner_join(prs_data, by = c("subject_id" = "IID"))
+```
+
+##Model
+```{r}
+model_gupta <- lm(mtcn ~ Z_norm2 + Sex + DX.bl+ Age + apoe4dos + 
+                        PC1 + PC2 + PC3 + PC4,
+                      data = matched_adni_prs)
+summary(model_gupta)
+```
+

@@ -1,0 +1,104 @@
+---
+title: "R Notebook"
+output: html_notebook
+editor_options: 
+  chunk_output_type: console
+---
+
+#Combine all MVMR results
+```{r}
+# Set path to your folder
+folder_path <- "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/results/Aadrita_results/mvmr_results"
+
+# List all CSV files in the folder
+csv_files <- list.files(path = folder_path, pattern = "\\.csv$", full.names = TRUE)
+
+# Read and combine all CSVs
+combined_df <- purrr::map_dfr(csv_files, read_csv)
+
+# Check result
+glimpse(combined_df)
+```
+
+#Clean dataframe
+```{r}
+combined_df_clean <- combined_df %>% 
+  mutate(
+    method = case_when(
+      method == "Inverse variance weighted (fixed effects)" ~ "IVW",
+      method == "Egger" ~ "Egger",
+      method == "Weighted median" ~ "Weighted median",
+      method == "Weighted mode" ~ "Weighted mode",
+      method == "IVW" ~ "IVW",  # keep existing IVW
+      TRUE ~ NA_character_
+    )
+  ) %>%
+  filter(!str_detect(Exposure, "Platelet")) %>%  # remove platelet rows 
+  filter(method %in% c("IVW", "Egger", "Weighted median", "Weighted mode")) %>%
+  mutate(
+    exposure = str_replace(Exposure, "^mtDNAcn_", ""),
+    outcome = Outcome
+  )
+```
+
+#Make names pretty
+```{r}
+combined_df_new <- combined_df_clean %>%
+  mutate(
+    Exposure = tools::toTitleCase(exposure),
+    #outcome = tools::toTitleCase(outcome),
+    method = gsub("Inverse variance weighted \\(fixed effects\\)", "IVW", method),
+    outcome = recode(Outcome,
+                     "Bellenguez AD" = "AD/dementia",
+                     "Kunkle AD" = "AD",
+                     "Nalls PD" = "PD")
+  ) %>% 
+  mutate(method = factor(method, levels = c("IVW", "Egger", "Weighted median"))) %>% 
+  filter(Exposure == "Hagg") #Filter just for Hagg
+
+#write_tsv(combined_df_clean, "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/results/Aadrita_results/combined_mvmr_results.tsv")
+```
+
+#Read it in
+```{r}
+#combined_df_new <- read_tsv("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/results/Aadrita_results/combined_mvmr_results.tsv")
+```
+
+
+#Plot
+```{r}
+or_plot <- ggplot(combined_df_new, aes(
+  y = method,
+  x = or,
+  xmin = lower_bound,
+  xmax = upper_bound
+)) +
+  geom_pointrange(position = position_dodge(width = 0.5)) +
+  facet_wrap(~outcome) +
+  geom_vline(xintercept = 1, linetype = 2, color = "black") +
+  labs(
+    title = "MVMR Odds Ratio for Hägg",
+    x = "Odds Ratio (95% CI)",
+    y = "Method",
+    color = "Exposure"
+  ) +
+  scale_alpha_manual(values = c(`TRUE` = 1, `FALSE` = 0.3)) +  # adjust fade here
+  guides(alpha = "none") + 
+  theme_bw() +
+  theme(
+    text = element_text(size = 12),
+    axis.ticks = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(hjust = 0.5),
+    strip.text = element_text(face = "bold"),
+    strip.background = element_blank()
+  ) +
+  scale_color_brewer(palette = "Set1") +
+  scale_y_discrete(limits = rev) 
+
+print(or_plot)
+
+#ggsave("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/results/Aadrita_results/plots/mvmr_results_mtdnacn_onto_ad_pd.png", or_plot, units = "in", width = 6.7, height = 4, dpi = 300)
+```
+

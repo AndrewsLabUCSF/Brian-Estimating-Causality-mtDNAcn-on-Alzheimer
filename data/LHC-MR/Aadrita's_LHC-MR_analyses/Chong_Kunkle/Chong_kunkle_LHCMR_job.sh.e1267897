@@ -1,0 +1,8 @@
+Warning message:
+package ‘lhcMR’ was built under R version 4.4.1 
+running mtDNAcn_Apoe_removedrunning AD
+importing SP_list9
+completed LHC-MR
+Error in res_Chong_Kunkle %>% as_tibble() %>% write_csv(., "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/LHC-MR/lhcmr_Chong_Kunkle_apoe_removed_Aadrita.csv") : 
+  could not find function "%>%"
+Execution halted

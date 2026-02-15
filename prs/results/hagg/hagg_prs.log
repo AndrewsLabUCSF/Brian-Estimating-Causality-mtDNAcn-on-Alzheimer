@@ -1,0 +1,25 @@
+PLINK v1.90b6.26 64-bit (2 Apr 2022)
+Options in effect:
+  --bfile /wynton/group/andrews/data/reference_panels/EUR_All_Chr
+  --out hagg_prs
+  --score /wynton/group/andrews/users/achatterjee/prs/data/mtDNAcn_clump_hagg_apoe_removed.txt 1 2 3 header
+
+Hostname: gh-id24.wynton.ucsf.edu
+Working directory: /wynton/group/andrews/users/achatterjee
+Start time: Tue Mar 11 16:55:20 2025
+
+Random number seed: 1741737320
+225271 MB RAM detected; reserving 112635 MB for main workspace.
+9801351 variants loaded from .bim file.
+503 people (0 males, 0 females, 503 ambiguous) loaded from .fam.
+Ambiguous sex IDs written to hagg_prs.nosex .
+Using 1 thread (no multithreaded calculations invoked).
+Before main variant filters, 503 founders and 0 nonfounders present.
+Calculating allele frequencies... done.
+Total genotyping rate is 0.999774.
+9801351 variants and 503 people pass filters and QC.
+Note: No phenotypes present.
+--score: 49 valid predictors loaded.
+--score: Results written to hagg_prs.profile .
+
+End time: Tue Mar 11 16:55:27 2025

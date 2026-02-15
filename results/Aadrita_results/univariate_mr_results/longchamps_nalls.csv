@@ -1,0 +1,5 @@
+id.exposure,id.outcome,outcome,exposure,method,nsnp,b,se,pval
+O5ScHS,4garlj,nalls_PD,mtDNA_longchamps,Inverse variance weighted (fixed effects),57,-0.022289433357587193,0.07049958744493248,0.7518780118093131
+O5ScHS,4garlj,nalls_PD,mtDNA_longchamps,MR Egger,57,0.2018073475090666,0.19025974837973902,0.29346479457564767
+O5ScHS,4garlj,nalls_PD,mtDNA_longchamps,Weighted median,57,-0.0034886114279933157,0.11256997097001518,0.9752770327463717
+O5ScHS,4garlj,nalls_PD,mtDNA_longchamps,Weighted mode,57,-0.053385306989433445,0.13250998660586788,0.6885722229580273

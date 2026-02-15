@@ -1,0 +1,324 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+## Libraries
+
+Loads the appropriate packages for MR analysis
+
+``` {r eval=FALSE}
+library(tidyverse) # Data wrangling 
+
+library(cowplot)
+
+library(ggman)
+
+library(TwoSampleMR) # MR 
+
+library(RadialMR) # Radial MR sensitivity analysis 
+
+library(phenoscanner)
+
+library(LDlinkR) # LD and proxy snps
+
+library(janitor)
+
+library(MVMR)         # Multivarble MR
+
+library(RMVMR)
+
+library(MendelianRandomization)
+
+library(MVMRmode)
+
+#MVMR Munge proxies
+source("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/Scripts/Functions/mvmr_munge_proxies.R")
+
+#Munge proxies
+source("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/Scripts/Functions/munge_proxies.R")
+
+# Define column types for summary statistics (MDNA and AD GWAS)
+coltypes = cols(
+  ID = col_character(),
+  CHROM = col_double(),
+  POS = col_double(),
+  REF = col_character(),
+  ALT = col_character(),
+  AF = col_double(),
+  TRAIT = col_character(),
+  BETA = col_double(),
+  SE = col_double(),
+  Z = col_double(),
+  P = col_double(),
+  N = col_double(),
+  OR = col_double(),
+  OR_L95 = col_double(),
+  OR_U95 = col_double(),
+  DIR = col_character(),
+  G1000_ID = col_character(),
+  G1000_VARIANT = col_character(),
+  DBSNP_ID = col_character(),
+  DBSNP_VARIANT = col_character(),
+  OLD_ID = col_character(),
+  OLD_VARIANT = col_character()
+)
+
+`%nin%` = negate(`%in%`)
+
+```
+
+## Exposure 1: Chong
+``` {r read_in_chong}
+
+exposure_path_chong = "/wynton/group/andrews/data/summary_stats/results/Chong2022mtdnacn_eur.chrall.CPRA_b37.tsv.gz"
+
+mtDNAcn_chong <- read_tsv(exposure_path_chong,comment="#")
+
+
+# To format the GWAS results for MR analysis Exposure. 
+# Rename right-side variables to match column names of your GWAS dataset.
+Format_mtDNAcn_chong <- mtDNAcn_chong %>% format_data(.,
+  type = "exposure",
+  snps = NULL,
+  header = TRUE,
+  phenotype_col = "TRAIT",
+  snp_col = "DBSNP_ID",
+  beta_col = "BETA",
+  se_col = "SE",
+  eaf_col = "AF",
+  effect_allele_col = "REF",
+  other_allele_col = "ALT",
+  pval_col = "P",
+  units_col = "units",
+  ncase_col = "N_CASES",
+  ncontrol_col = "N_CTRLS",
+  samplesize_col = "N",
+  gene_col = "gene",
+  min_pval = 1e-200,
+  z_col = "Z",
+  info_col = "info",
+  chr_col = "CHROM",
+  pos_col = "POS",
+  log_pval = FALSE
+)  %>%
+  as_tibble()
+
+
+Format_mtDNAcn_chong <- Format_mtDNAcn_chong %>%
+mutate(exposure = "mtDNA_chong")
+
+mtDNAcn_chong_gws <- filter(Format_mtDNAcn_chong, pval.exposure < 5e-8)
+
+
+#Clump locally
+mtDNAcn_clump_chong <- mtDNAcn_chong_gws %>% 
+  filter(pval.exposure < 1e-5) %>%
+  select(rsid = SNP, pval = pval.exposure) %>%
+  ieugwasr::ld_clump(
+    dat = .,
+    clump_kb = 10000,
+    clump_r2 = 0.001,
+    clump_p = 0.99,
+    bfile = '/wynton/group/andrews/data/reference_panels/EUR_All_Chr',
+    plink_bin = '/wynton/home/andrews/achatterjee/plink'
+  )
+
+#Append the SNPS to Format_mtDNAcn_chong so we can get all the columns and get gws 
+mtDNAcn_chong_gws <- filter(Format_mtDNAcn_chong, SNP %in% mtDNAcn_clump_chong$rsid, pval.exposure < 5e-8)
+
+#Remove APOE region
+mtDNAcn_clump_chong <- filter(mtDNAcn_chong_gws, !(chr.exposure == 19 & between(pos.exposure, 44912079, 45912079)))
+```
+
+## Outcome: Nalls PD
+```{r}
+outcome_path = "/wynton/group/andrews/data/summary_stats/results/Nalls2019PD/Nalls2019PD.b37.chrall.tsv.gz"
+
+outcome_ss_Nalls <- read_tsv(outcome_path) %>%
+  mutate(
+    N = 1460059,
+    Z = ES / SE, 
+    P = 10^(-LP)) %>%
+  dplyr::rename(CHROM = CHR, BETA = ES) %>% 
+  dplyr::select(DBSNP_ID, CHROM, POS, ALT, REF, AF, BETA, SE, Z, P, N) %>% 
+  dplyr::rename(SNP = DBSNP_ID)
+
+
+# Rename right-side variables to match column names of your GWAS dataset 
+outcome_AD_Format_Nalls <- outcome_ss_Nalls %>%
+  format_data(.,
+    type = "outcome",
+    #snps = NULL,
+    header = TRUE,
+    snp_col = "SNP",
+    beta_col = "BETA",
+    se_col = "SE",
+    eaf_col = "AF",
+    effect_allele_col = "ALT",
+    other_allele_col = "REF",
+    pval_col = "P",
+    samplesize_col = "N",
+    pos_col = "POS",
+    chr_col = "CHROM",
+    log_pval = FALSE
+) %>%
+  as_tibble()
+
+outcome_AD_Format_Nalls <- outcome_AD_Format_Nalls %>%
+mutate(outcome = "nalls_PD")
+```
+
+#LD proxy SNPs
+```{r}
+# extract chong SNPs present in outcome
+outcome_clump <- semi_join(
+ outcome_AD_Format_Nalls, mtDNAcn_clump_chong, by = "SNP"
+)
+
+# Chong SNPs not present in outcome
+exp_snps_wo <- anti_join(
+  mtDNAcn_clump_chong, outcome_AD_Format_Nalls, by = "SNP"
+) #58 SNPs
+
+# Use LDLinkR to identify proxy snps
+LDproxy_batch(exp_snps_wo$SNP, 
+        pop = "CEU", 
+        r2d = "r2", 
+        token = 'a6deee62cc4a', 
+        append = TRUE,
+        genome_build = "grch37")
+system("mv combined_query_snp_list_grch37.txt exposure_outcome_proxy_snps_chong_nalls_Aadrita.txt")
+
+# Munge proxy snp file
+outcome_dat <- munge_proxies("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/proxy_snps/exposure_outcome_proxy_snps_chong_nalls_Aadrita.txt", outcome_AD_Format_Nalls, outcome_clump)
+```
+
+#Harmonise
+```{r}
+harmonised_data <- harmonise_data(mtDNAcn_clump_chong, outcome_dat, action = 2) %>% as_tibble() %>%
+#  mutate(
+#    apoe_region = case_when(
+#      chr.outcome == 19 & between(pos.outcome, 44912079, 45912079) ~ TRUE,
+#      TRUE ~ FALSE
+#    ), 
+#    gws.outcome = ifelse(pval.outcome < 5e-8, TRUE, FALSE), 
+#   mr_keep = ifelse(mr_keep == FALSE | apoe_region == TRUE | gws.outcome == TRUE, FALSE, TRUE)
+#  )
+  filter(pval.exposure < 5e-8)
+```
+
+#Export
+```{r}
+write_csv(harmonised_data, "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/Harmonized_Datasets/chong_nalls_univariate_harmonised_data.csv")
+```
+
+#Import harmonised dataset
+```{r}
+harmonised_data <- read_csv("/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/data/Harmonized_Datasets/chong_nalls_univariate_harmonised_data.csv")
+```
+
+#F statistic
+```{r}
+## F statistic. Burgess et al 2011
+f_stat = function(N, K, R){
+  f = ((N-K-1) / K) * (R/(1-R))
+  f
+}
+
+## Proportion of phenotypic variance explained by SNP
+## https://doi.org/10.1371/journal.pone.0120758.s001
+
+snp.pve <- function(eaf, beta, se, n){
+  (2*eaf*(1 - eaf)*beta^2) / (2 * beta * eaf * (1-eaf) + se^2 * 2 * n * eaf * (1-eaf))
+}
+
+f_res <- harmonised_data %>%
+  group_by(exposure, outcome) %>%
+  filter(mr_keep == TRUE) %>%
+  select(SNP, exposure, outcome, effect_allele.exposure, eaf.exposure, beta.exposure, se.exposure) %>%
+  mutate(
+    samplesize.exposure = 395781,
+    pve = snp.pve(eaf.exposure, beta.exposure, se.exposure, samplesize.exposure),
+    f = f_stat(samplesize.exposure, 1, pve),
+    # f = abs(beta.exposure)^2 / se.exposure^2
+  ) %>%
+  summarise(
+    pve = sum(pve, na.rm = T),
+    k = n(),
+    samplesize = max(samplesize.exposure),
+    f = mean(f, na.rm = T),
+  )
+f_res
+
+```
+
+#MR
+```{r}
+mr_res <- mr(harmonised_data, method_list = c(
+  "mr_two_sample_ml",  "mr_egger_regression", "mr_weighted_median", 
+  "mr_ivw_fe", "mr_ivw_mre",
+  "mr_simple_mode", "mr_weighted_mode"
+  ))
+
+res_single <- mr_singlesnp(harmonised_data, all_method = c("mr_ivw_fe", "mr_egger_regression", "mr_weighted_median", "mr_weighted_mode")) %>% as_tibble()
+```
+
+##Sensitivity analyses
+```{r}
+mr_heterogeneity(harmonised_data)
+mr_pleiotropy_test(harmonised_data)
+```
+
+##Radial MR
+```{r}
+radial_dat <- harmonised_data %>% filter(mr_keep == T) %>% dat_to_RadialMR()
+radial_res <- ivw_radial(radial_dat$mtDNA_chong.nalls_PD, alpha = 0.05/nrow(radial_dat$mtDNA_chong.nalls_PD)) #significant outliers
+```
+
+##Radial MR (outliers detected)
+```{r}
+radial_dat <- harmonised_data %>% filter(mr_keep == T) %>% dat_to_RadialMR()
+rmr_dat <- radial_dat$mtDNA_chong.nalls_PD
+
+# Run Radial MR
+bonff = 0.05/nrow(rmr_dat) # Bonferonni Correction
+radial_ivw_res <- ivw_radial(rmr_dat, alpha = bonff) 
+
+radial_egger_res <- egger_radial(rmr_dat, alpha = bonff) 
+
+
+#Plot
+ivw_radial_p <- plot_radial(radial_ivw_res, radial_scale = F, show_outliers = F)
+egger_radial_p <- plot_radial(radial_egger_res, radial_scale = F, show_outliers = F)
+
+## Modify the mrkeep variable to flag variants as outliers from radial MR for removal
+mr_dat_outlier <- harmonised_data %>%
+  left_join(radial_ivw_res$dat) %>%
+  mutate(
+     mr_keep = case_when(
+       Outliers == "Outlier" ~ FALSE, 
+       TRUE ~ mr_keep
+     )
+  )
+
+## MR analysis 
+mr_res_outlier <- mr(mr_dat_outlier, method_list = c("mr_ivw_fe", "mr_egger_regression", "mr_weighted_median", "mr_weighted_mode")) 
+mr_res_outlier <- mr_res_outlier[-5, ] #Delete the duplicate IVW 
+
+
+# Heterogeneity statistics 
+mr_het_outlier <- mr_heterogeneity(mr_dat_outlier, method_list = c("mr_egger_regression", "mr_ivw")) 
+
+# Horizontal pleitropy
+mr_plt_outlier <- mr_pleiotropy_test(mr_dat_outlier)
+
+# Radial MR 
+radial_dat_outlier <- mr_dat_outlier %>% filter(mr_keep == T) %>% dat_to_RadialMR()
+radial_res_outlier <- ivw_radial(radial_dat_outlier$mtDNA_longchamps.bellenguez, alpha = 0.05/nrow(radial_dat_outlier$mtDNA_chong.nalls_PD)) 
+
+```
+#Save MR results
+```{r}
+write_csv(mr_res_outlier, "/wynton/group/andrews/users/achatterjee/mtdnacn/Brian-Estimating-Causality-mtDNAcn-on-Alzheimer/results/Aadrita_results/univariate_mr_results/chong_nalls.csv")
+```

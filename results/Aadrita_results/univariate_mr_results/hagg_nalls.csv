@@ -1,0 +1,5 @@
+id.exposure,id.outcome,outcome,exposure,method,nsnp,b,se,pval
+6rZRRG,eIhmae,nalls_PD,mtDNA_hagg,Inverse variance weighted (fixed effects),26,0.16357494370045708,0.10093603840183128,0.1051077048627324
+6rZRRG,eIhmae,nalls_PD,mtDNA_hagg,MR Egger,26,0.1559498659526646,0.5500746250776494,0.7792196808802891
+6rZRRG,eIhmae,nalls_PD,mtDNA_hagg,Weighted median,26,0.21607382162104594,0.14933095497954538,0.14791206017486921
+6rZRRG,eIhmae,nalls_PD,mtDNA_hagg,Weighted mode,26,0.2893763616065157,0.24002451258328922,0.23925459778985134

@@ -1,0 +1,15 @@
+[1] "Running optimisation"
+Running optimisation[1] "Running block JK"
+Running block JK[1] "Done!"
+                             piX          piY          h2X          h2Y
+Parameter estimates 2.421464e-05 7.607518e-05 2.912997e-02 1.274353e-02
+SE-JK                         NA           NA 4.843449e-03 1.269535e-03
+Pval                          NA           NA 1.806621e-09 1.038085e-23
+                             tX          tY         axy         ayx        iXY
+Parameter estimates 0.008807662 -0.02613312 -0.07847462 -0.06773772 0.01999457
+SE-JK               0.024605198  0.01299956  0.03310234  0.12250455 0.01154696
+Pval                0.720373688  0.04439853  0.01775604  0.58030418 0.08334719
+                          iX       iY
+Parameter estimates 1.066184 1.086918
+SE-JK                     NA       NA
+Pval                      NA       NA

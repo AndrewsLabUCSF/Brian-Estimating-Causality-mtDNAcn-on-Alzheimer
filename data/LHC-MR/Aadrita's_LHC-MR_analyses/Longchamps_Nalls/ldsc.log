@@ -1,0 +1,20 @@
+Read list of 141123 SNPs from /wynton/group/andrews/users/achatterjee/genetic_correlations/resources/reference/genotype/1000G.EUR.QC.22.bim
+After merging, 2462 SNPs remain
+Read list of 489 individuals from /wynton/group/andrews/users/achatterjee/genetic_correlations/resources/reference/genotype/1000G.EUR.QC.22.fam
+Reading genotypes from /wynton/group/andrews/users/achatterjee/genetic_correlations/resources/reference/genotype/1000G.EUR.QC.22.bed
+After filtering, 2462 SNPs remain
+
+Summary of LD Scores
+         MAF       L2
+mean  0.2296   3.2284
+std   0.1424   2.1790
+min   0.0061   0.9299
+25%   0.1012   1.7063
+50%   0.2178   2.5201
+75%   0.3466   3.9630
+max   0.5000  13.1277
+
+MAF/LD Score Correlation Matrix
+        MAF      L2
+MAF  1.0000  0.2188
+L2   0.2188  1.0000

@@ -1,0 +1,5 @@
+id.exposure,id.outcome,outcome,exposure,method,nsnp,b,se,pval
+h706ri,VegaEt,bellenguez,mtDNA_gupta,Inverse variance weighted (fixed effects),61,-0.014419815600339062,0.03438374364542379,0.6749392631321891
+h706ri,VegaEt,bellenguez,mtDNA_gupta,MR Egger,61,-0.026736627132035885,0.09386117433057183,0.7767543478390452
+h706ri,VegaEt,bellenguez,mtDNA_gupta,Weighted median,61,0.07249107518664345,0.054879122162577613,0.18652715837972894
+h706ri,VegaEt,bellenguez,mtDNA_gupta,Weighted mode,61,0.07214551317790452,0.08747256829863048,0.4127642610020701

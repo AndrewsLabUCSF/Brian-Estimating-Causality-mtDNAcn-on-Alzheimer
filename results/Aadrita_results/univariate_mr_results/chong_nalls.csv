@@ -1,0 +1,5 @@
+id.exposure,id.outcome,outcome,exposure,method,nsnp,b,se,pval
+LPuAov,4garlj,nalls_PD,mtDNA_chong,Inverse variance weighted (fixed effects),14,0.21093090639920517,0.14810233438787623,0.1543816252777249
+LPuAov,4garlj,nalls_PD,mtDNA_chong,MR Egger,14,0.4612071458255575,0.898926081700021,0.6172198302300391
+LPuAov,4garlj,nalls_PD,mtDNA_chong,Weighted median,14,0.004828194999744767,0.22689988951768605,0.9830231228629075
+LPuAov,4garlj,nalls_PD,mtDNA_chong,Weighted mode,14,-0.05068726617521957,0.24943210150103065,0.8421165571232838
